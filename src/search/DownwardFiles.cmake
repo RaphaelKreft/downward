@@ -509,6 +509,15 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+        NAME DOMAIN_ABSTRACTION_HEURISTIC
+        HELP "The 'Domain Abstraction' heuristic (constructed using CEGAR Algorithm)"
+        SOURCES
+            domain_abstractions/cegar
+            domain_abstractions/domain_abstraction
+        DEPENDS TASK_PROPERTIES
+)
+
+fast_downward_plugin(
     NAME DOMAIN_TRANSITION_GRAPH
     HELP "DTGs used by cg and cea heuristic"
     SOURCES

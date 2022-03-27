@@ -1,0 +1,102 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.8.3"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "search",
+					"jsonFile" : "directory-search-Debug-a6fd05ccaa1369684523.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.8.3"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "search",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "fast-downward",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "downward",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "downward::@b3e4e3481926c17d0075",
+					"jsonFile" : "target-downward-Debug-5dd0692a8824fe288428.json",
+					"name" : "downward",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "translate::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-translate-Debug-b628e62b93a27b43946b.json",
+					"name" : "translate",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/rbox/Desktop/git repos/downward/src/cmake-build-debug",
+		"source" : "/home/rbox/Desktop/git repos/downward/src"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}
