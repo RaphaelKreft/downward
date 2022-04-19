@@ -493,6 +493,20 @@ fast_downward_plugin(
 )
 
 fast_downward_plugin(
+        NAME DOMAIN_ABSTRACTION_HEURISTIC
+        HELP "The 'DA-CEGAR' heuristic"
+        SOURCES
+        domain_abstractions/data_structures
+        domain_abstractions/domain_abstraction
+        domain_abstractions/domain_abstraction_heuristic
+        domain_abstractions/domainAbstractedState
+        domain_abstractions/heuristic_basis
+        domain_abstractions/transition_system
+
+        DEPENDS TASK_PROPERTIES
+)
+
+fast_downward_plugin(
     NAME CONTEXT_ENHANCED_ADDITIVE_HEURISTIC
     HELP "The context-enhanced additive heuristic"
     SOURCES

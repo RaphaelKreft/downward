@@ -4,6 +4,7 @@
 
 #include "../heuristic.h"
 #include "heuristic_basis.h"
+#include "../option_parser.h"
 
 namespace domain_abstractions {
     class HeuristicBasis;
@@ -14,6 +15,7 @@ namespace domain_abstractions {
     protected:
         virtual int compute_heuristic(const State &ancestor_state) override;
     public:
+        HeuristicBasis* generate_heuristic(const Options &opts, utils::LogProxy &log);
         explicit DomainAbstractionHeuristic(const options::Options &opts);
     };
 }

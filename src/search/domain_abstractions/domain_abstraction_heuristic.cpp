@@ -14,14 +14,15 @@
 using namespace std;
 
 namespace domain_abstractions {
-    static HeuristicBasis* generate_heuristic(const Options &opts, utils::LogProxy &log) {
+    HeuristicBasis* DomainAbstractionHeuristic::generate_heuristic(const Options &opts, utils::LogProxy &log) {
         if (log.is_at_least_normal()) {
             log << "Initializing Domain Abstraction heuristic using CEGAR-Like Algorithm..." << endl;
         }
         int max_time = opts.get<double>("max_time");
-        HeuristicBasis* h = new HeuristicBasis(max_time, log);
+        string splitMethod = opts.get<string>("split_method");
+        HeuristicBasis* h = new HeuristicBasis(max_time, log, task_proxy ,splitMethod);
         // call to construct will start refinement using CEGAR-Algorithm
-        h->construct(opts.get<shared_ptr<AbstractTask>>("transform"));
+        h->construct(task_proxy);
         return h;
     }
 
@@ -63,6 +64,9 @@ namespace domain_abstractions {
                 "maximum time in seconds for building abstractions",
                 "infinity",
                 Bounds("0.0", "infinity"));
+        parser.add_option<string>("split_method",
+                                  "The Method how the Abstraction Refinement works",
+                                  "HardSplit");
 
         Heuristic::add_options_to_parser(parser);
         Options opts = parser.parse();

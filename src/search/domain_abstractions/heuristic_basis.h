@@ -9,7 +9,8 @@
 #include "../utils/memory.h"
 
 #include "domain_abstraction.h"
-
+#include "data_structures.h"
+#include "split.h"
 #include <algorithm>
 #include <cassert>
 #include <vector>
@@ -21,21 +22,27 @@ namespace domain_abstractions {
 
     class HeuristicBasis {
         double max_time;
+        utils::CountdownTimer timer;
         utils::LogProxy &log;
 
-        DomainAbstraction abstraction;
-        std::vector<std::vector<int>> HeuristicValues;
+        shared_ptr<TransitionSystem> transitionSystem;
+        unique_ptr<DomainAbstraction> abstraction;
+        vector<int> heuristicValues;
+        DomainSplitter domainSplitter;
     public:
-        explicit HeuristicBasis(int max_time, utils::LogProxy &log);
+        explicit HeuristicBasis(int max_time, utils::LogProxy &log, TaskProxy originalTask, string splitMethod);
         int getValue(State state);
-        void construct(std::shared_ptr<AbstractTask> originalTask);
+        void construct(TaskProxy originalTask);
     protected:
-        bool shouldTerminate();
-        void findOptimalTrace();
-        void refine();
-        void findFlaw(std::shared_ptr<AbstractTask> originalTask);
-        void extractPath(std::shared_ptr<AbstractTask> originalTask));
-        void trivialAbstraction(std::shared_ptr<AbstractTask> originalTask);
+        unique_ptr<DomainAbstraction> createAbstraction(TaskProxy originalTask);
+        vector<int> calculateHeuristicValues();
+
+        bool cegarShouldTerminate();
+        shared_ptr<Trace> cegarFindOptimalTrace(unique_ptr<DomainAbstraction> currentAbstraction);
+        void cegarRefine(shared_ptr<Flaw> flaw, unique_ptr<DomainAbstraction> currentDomainAbstraction);
+        shared_ptr<Flaw> cegarFindFlaw(shared_ptr<Trace> trace, TaskProxy originalTask);
+        Solution cegarExtractPath(shared_ptr<Trace> trace, TaskProxy originalTask);
+        unique_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
     };
 }
 

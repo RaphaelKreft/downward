@@ -27,3 +27,6 @@ Init:
     - read from goal state the value variables must have
     - split domain of every variable to -> {val in goal} and {rest}
 
+Trace: sequence of pairs containing operator and goal
+Solution: just sequence of states?
+
