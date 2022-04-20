@@ -1,9 +1,11 @@
 #include "domainAbstractedState.h"
-#include "cassert"
+#include <cassert>
+
+using namespace std;
 
 namespace domain_abstractions {
-    DomainAbstractedState::DomainAbstractedState(vector<int> groupAssignments, int ID):
-        groupAssignments(groupAssignments), abstract_state_id(ID) {
+    DomainAbstractedState::DomainAbstractedState(vector<int> groupAssignments, int ID) :
+            groupAssignments(groupAssignments), abstract_state_id(ID) {
     }
 
     vector<int> DomainAbstractedState::getGroupsAssignment() {
@@ -35,7 +37,7 @@ namespace domain_abstractions {
         incomingOperator_ID = op_id;
     }
 
-    DomainAbstractedState* DomainAbstractedState::getParent() {
+    DomainAbstractedState *DomainAbstractedState::getParent() {
         return parentAbstractState;
     }
 }

@@ -18,11 +18,11 @@ namespace domain_abstractions {
     public:
         DomainSplitter(SplitMethod method);
 
-        VariableGroupVectors split(shared_ptr<Flaw> flaw,
-                                   unique_ptr<DomainAbstraction> currentAbstraction);
+        VariableGroupVectors split(std::shared_ptr<Flaw> flaw,
+                                   std::unique_ptr<DomainAbstraction> currentAbstraction);
 
         // map string to ENUM
-        static SplitMethod getEnumForString(string splitMethodSuggestion) {
+        static SplitMethod getEnumForString(std::string splitMethodSuggestion) {
             if (splitMethodSuggestion == "HardSplit") {
                 return SplitMethod::HARDSPLIT;
             } else {
@@ -32,8 +32,8 @@ namespace domain_abstractions {
         }
 
     private:
-        VariableGroupVectors performHardSplit(shared_ptr<Flaw> flaw,
-                                              unique_ptr<DomainAbstraction> currentAbstraction);
+        VariableGroupVectors performHardSplit(std::shared_ptr<Flaw> flaw,
+                                              std::unique_ptr<DomainAbstraction> currentAbstraction);
     };
 
 }

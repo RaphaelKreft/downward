@@ -1,13 +1,13 @@
 #ifndef DOMAIN_ABSTRACTIONS_DATA_STRUCTURES_H
 #define DOMAIN_ABSTRACTIONS_DATA_STRUCTURES_H
 
-#include "iostream"
+#include "domainAbstractedState.h"
+
+#include <iostream>
 #include <deque>
-#include "map"
+#include <map>
 #include <unordered_map>
 #include <vector>
-
-#include "domainAbstractedState.h"
 
 // make state from task_proxy class visible
 class State;
@@ -15,6 +15,18 @@ class State;
 struct FactPair;
 
 namespace domain_abstractions {
+
+    using Transitions = std::vector<Transition>;
+    using Trace = std::deque<Transition>;
+    using Solution = std::deque<State>;
+    using DomainAbstractedStates = std::vector<DomainAbstractedState *>;
+    // same as in domain_abstracted_task.cc
+    using ValueGroup = std::vector<int>;
+    using ValueGroups = std::vector<ValueGroup>;
+    using VarToGroups = std::unordered_map<int, ValueGroups>;
+    // Group mapping vectors
+    using VariableGroupVector = std::vector<int>;
+    using VariableGroupVectors = std::vector<VariableGroupVector>;
 
     struct Transition {
         int op_id;
@@ -36,25 +48,13 @@ namespace domain_abstractions {
     };
 
     struct Flaw {
-        vector<int> stateWhereFlawHappens; // from that we can later derive the abstract state
-        vector<FactPair> missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
+        std::vector<int> stateWhereFlawHappens; // from that we can later derive the abstract state
+        std::vector<FactPair> missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
 
-        Flaw(vector<int> flawBaseState, vector<FactPair> missedFacts) : stateWhereFlawHappens(flawBaseState),
-                                                                     missedFacts(missedFacts) {
+        Flaw(std::vector<int> flawBaseState, std::vector<FactPair> missedFacts) : stateWhereFlawHappens(flawBaseState),
+                                                                        missedFacts(missedFacts) {
         }
     };
-
-    using Transitions = vector<Transition>;
-    using Trace = deque<Transition>;
-    using Solution = deque<State>;
-    using DomainAbstractedStates = vector<DomainAbstractedState *>;
-    // same as in domain_abstracted_task.cc
-    using ValueGroup = vector<int>;
-    using ValueGroups = vector<ValueGroup>;
-    using VarToGroups = unordered_map<int, ValueGroups>;
-    // Group mapping vectors
-    using VariableGroupVector = vector<int>;
-    using VariableGroupVectors = vector<VariableGroupVector>;
 }
 
 #endif

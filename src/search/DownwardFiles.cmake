@@ -496,13 +496,13 @@ fast_downward_plugin(
         NAME DOMAIN_ABSTRACTION_HEURISTIC
         HELP "The 'DA-CEGAR' heuristic"
         SOURCES
-        domain_abstractions/data_structures
-        domain_abstractions/domain_abstraction
-        domain_abstractions/domain_abstraction_heuristic
-        domain_abstractions/domainAbstractedState
-        domain_abstractions/heuristic_basis
-        domain_abstractions/transition_system
-
+            domain_abstractions/data_structures
+            domain_abstractions/domain_abstraction
+            domain_abstractions/domain_abstraction_heuristic
+            domain_abstractions/domainAbstractedState
+            domain_abstractions/heuristic_basis
+            domain_abstractions/transition_system
+            domain_abstractions/split
         DEPENDS TASK_PROPERTIES
 )
 
@@ -520,15 +520,6 @@ fast_downward_plugin(
     SOURCES heuristics/cg_heuristic
             heuristics/cg_cache
     DEPENDS DOMAIN_TRANSITION_GRAPH PRIORITY_QUEUES TASK_PROPERTIES
-)
-
-fast_downward_plugin(
-        NAME DOMAIN_ABSTRACTION_HEURISTIC
-        HELP "The 'Domain Abstraction' heuristic (constructed using CEGAR Algorithm)"
-        SOURCES
-            domain_abstractions/cegar
-            domain_abstractions/domain_abstraction
-        DEPENDS TASK_PROPERTIES
 )
 
 fast_downward_plugin(

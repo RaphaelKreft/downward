@@ -1,27 +1,19 @@
-
-#include "domain_abstraction_heuristic.h"
-
-#include "../option_parser.h"
 #include "../plugin.h"
-
-#include "../task_utils/task_properties.h"
-#include "../utils/logging.h"
-
-#include <cstddef>
-#include <limits>
-#include <utility>
+#include "domain_abstraction_heuristic.h"
 
 using namespace std;
 
 namespace domain_abstractions {
-    HeuristicBasis* DomainAbstractionHeuristic::generate_heuristic(const Options &opts, utils::LogProxy &log) {
+    HeuristicBasis *DomainAbstractionHeuristic::generate_heuristic(const Options &opts, utils::LogProxy &log) {
         if (log.is_at_least_normal()) {
             log << "Initializing Domain Abstraction heuristic using CEGAR-Like Algorithm..." << endl;
         }
         int max_time = opts.get<double>("max_time");
         string splitMethod = opts.get<string>("split_method");
-        HeuristicBasis* h = new HeuristicBasis(max_time, log, task_proxy ,splitMethod);
-        // call to construct will start refinement using CEGAR-Algorithm
+        HeuristicBasis *h = new HeuristicBasis(max_time, log, task_proxy, splitMethod);
+        // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
+        task_properties::verify_no_axioms(task_proxy);
+        task_properties::verify_no_conditional_effects(task_proxy);
         h->construct(task_proxy);
         return h;
     }

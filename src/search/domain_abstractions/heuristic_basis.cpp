@@ -1,8 +1,5 @@
 #include "heuristic_basis.h"
 
-#include <unordered_set>
-#include "queue"
-
 using namespace std;
 
 namespace domain_abstractions {
@@ -48,17 +45,17 @@ namespace domain_abstractions {
         unique_ptr<DomainAbstraction> currentAbstraction(cegarTrivialAbstraction(originalTask));
         while (not cegarShouldTerminate()) {
             shared_ptr<Trace> t = cegarFindOptimalTrace(move(currentAbstraction));
-            if (!t) { // TODO unterscheidung empty = leerer plan und keine lösung gefunden
+            if (!t) {
                 // When no trace in Abstract space was found -> Task Unsolvable -> log and break
                 if (log.is_at_least_normal()) {
-                    log << "Abstract task is unsolvable. -> Normal task is unsolvable" << std::endl;
+                    log << "Abstract task is unsolvable. -> Normal task is unsolvable" << endl;
                 }
                 break;
             }
             shared_ptr<Flaw> f = cegarFindFlaw(t, originalTask);
             if (!f) {
                 if (log.is_at_least_normal()) {
-                    log << "Found concrete solution during refinement." << std::endl;
+                    log << "Found concrete solution during refinement." << endl;
                     // maybe show solution??
                     //log << cegarExtractPath(t, originalTask);
                 }
@@ -73,12 +70,12 @@ namespace domain_abstractions {
     bool HeuristicBasis::cegarShouldTerminate() {
         if (timer.is_expired()) {
             if (log.is_at_least_normal()) {
-                log << "Time expired!" << std::endl;
+                log << "Time expired!" << endl;
             }
             return true;
         } else if (!utils::extra_memory_padding_is_reserved()) {
             if (log.is_at_least_normal()) {
-                log << "Reached memory limit." << std::endl;
+                log << "Reached memory limit." << endl;
             }
             return true;
         }
@@ -128,14 +125,13 @@ namespace domain_abstractions {
         auto cmp = [](DomainAbstractedState *left, DomainAbstractedState *right) {
             return (left->getGValue()) < (right->getGValue());
         };
-        shared_ptr<priority_queue<DomainAbstractedState *, DomainAbstractedStates, decltype(cmp)>> openList =
-                make_shared<priority_queue<DomainAbstractedState *, DomainAbstractedStates, decltype(cmp)>>(cmp);
-        openList->push(initialState);
+        priority_queue<DomainAbstractedState *, DomainAbstractedStates, decltype(cmp)> openList(cmp);
+        openList.push(initialState);
         unordered_set<int> closedList;
-
-        while (!openList->empty()) {
-            DomainAbstractedState *nextState = openList->top();
-            openList->pop();
+        // TODO: may point to invalid memory when openList as normal object but not when as sharedtr?!
+        while (!openList.empty()) {
+            DomainAbstractedState *nextState = openList.top();
+            openList.pop();
             int nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
@@ -144,11 +140,11 @@ namespace domain_abstractions {
                     if (abstraction->isGoal(successorNode)) {
                         return extractSolution(successorNode);
                     }
-                    openList->push(successorNode);
+                    openList.push(successorNode);
                 }
             }
         }
-        return NULL;
+        return nullptr;
     }
 
     shared_ptr<Flaw> HeuristicBasis::cegarFindFlaw(shared_ptr<Trace> trace, TaskProxy originalTask) {
@@ -162,7 +158,8 @@ namespace domain_abstractions {
             // get next transition candidate
             Transition nextTransition = trace->front();
             trace->pop_front();
-            vector<FactPair> missedPreconditionFacts = transitionSystem->transitionApplicable(currState, nextTransition);
+            vector<FactPair> missedPreconditionFacts = transitionSystem->transitionApplicable(currState,
+                                                                                              nextTransition);
             // when missed-facts is not empty we have a precondition flaw -> preconditions not fulfilled in curr  state
             if (!missedPreconditionFacts.empty()) {
                 return make_shared<Flaw>(currState, missedPreconditionFacts);
@@ -179,8 +176,8 @@ namespace domain_abstractions {
         return nullptr;
     }
 
-    void HeuristicBasis::cegarRefine(std::shared_ptr<Flaw> flaw,
-                                     std::unique_ptr<DomainAbstraction> currentDomainAbstraction) {
+    void HeuristicBasis::cegarRefine(shared_ptr<Flaw> flaw,
+                                     unique_ptr<DomainAbstraction> currentDomainAbstraction) {
         /*
          * Uses the splitter as well as the retrieved flaw to refine the abstraction
          * */
@@ -195,8 +192,11 @@ namespace domain_abstractions {
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
+        vector<int> newHeuristicValues;
+
+        return newHeuristicValues;
         // 1. create goal state and set corresponding abstract state h-value to 0
-        vector<FactPair> goalFacts = abstraction->getGoalFacts();
+        /*vector<FactPair> goalFacts = abstraction->getGoalFacts();
         vector<int> abstractEquivalent = abstraction->getGroupAssignmentsForConcreteState(goalFacts);
         int index = abstraction->abstractStateLookupIndex(abstractEquivalent);
         heuristicValues.insert(heuristicValues.begin() + index, 0);
@@ -225,7 +225,7 @@ namespace domain_abstractions {
                     openList.push(successorNode);
                 }
             }
-        }
+        }*/
 
     }
 }

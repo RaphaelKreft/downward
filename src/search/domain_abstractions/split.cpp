@@ -1,28 +1,34 @@
 #include "split.h"
 
+using namespace std;
+
 namespace domain_abstractions {
 
     DomainSplitter::DomainSplitter(SplitMethod method) : currentMethod(method) {
     }
 
-    VariableGroupVectors DomainSplitter::split(shared_ptr<Flaw> flaw, unique_ptr<DomainAbstraction> currentAbstraction) {
+    VariableGroupVectors
+    DomainSplitter::split(shared_ptr<Flaw> flaw, unique_ptr<DomainAbstraction> currentAbstraction) {
         // Select method on how to split and call Submethod. We return the new Abstraction
         if (currentMethod == SplitMethod::HARDSPLIT) {
-            return performHardSplit( flaw, move(currentAbstraction));
+            return performHardSplit(flaw, move(currentAbstraction));
         } else {
-            raise(EXIT_FAILURE);
+            // default fallback if unknown TODO: add logging
+            return performHardSplit(flaw, move(currentAbstraction));
         }
     }
 
-    VariableGroupVectors DomainSplitter::performHardSplit(shared_ptr<Flaw> flaw, unique_ptr<DomainAbstraction> currentAbstraction) {
+    VariableGroupVectors
+    DomainSplitter::performHardSplit(shared_ptr<Flaw> flaw, unique_ptr<DomainAbstraction> currentAbstraction) {
         /*
          * Split missed fact from rest of facts in same group for every missed fact
          * */
         VariableGroupVectors oldAbstraction = currentAbstraction->getAbstractDomains();
         VariableGroupVectors newAbstraction = oldAbstraction;
         vector<int> stateValues = flaw->stateWhereFlawHappens;
-        vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(stateValues);
-        // TODO: we assume that there is max one missed fact for every variable!?
+        vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(
+                stateValues);
+        // TODO: we assume that there is max one missed fact for every variable!? -> YES in the formalism used in downward yes!
         vector<FactPair> missedFacts = flaw->missedFacts;
         // loop over variables and their domains
         for (FactPair &factPair: missedFacts) {

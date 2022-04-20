@@ -110,7 +110,7 @@ namespace domain_abstractions {
     vector<int> TransitionSystem::applyOperator(vector<int> currentValues, int op_id) {
         //vector<int> currentValues = currenState.get_unpacked_values();
         // TODO: all values(variables) in int vector and maybe change i/o of func to State?
-        for (int i = 0; i < (int)currentValues.size(); i++) {
+        for (int i = 0; i < (int) currentValues.size(); i++) {
             int newVal = get_postcondition_value(op_id, i);
             if (newVal != -1) {
                 currentValues[i] = newVal;
