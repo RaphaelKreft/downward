@@ -29,10 +29,10 @@ namespace domain_abstractions {
 
         std::shared_ptr<TransitionSystem> transitionSystem;
         std::unique_ptr<DomainAbstraction> abstraction;
-        std::vector<int> heuristicValues;
+        //std::vector<int> heuristicValues; TODO: Disabled because of on the fly computation
         DomainSplitter domainSplitter;
     public:
-        explicit HeuristicBasis(int max_time, utils::LogProxy &log, TaskProxy originalTask, string splitMethod);
+        explicit HeuristicBasis(int max_time, utils::LogProxy &log, TaskProxy originalTask, std::string splitMethod);
 
         int getValue(State state);
 
@@ -54,6 +54,8 @@ namespace domain_abstractions {
         Solution cegarExtractPath(std::shared_ptr<Trace> trace, TaskProxy originalTask);
 
         std::unique_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
+
+        int calculateHValueOnTheFly(VariableGroupVector startStateValues, int abstractStateIndex);
     };
 }
 

@@ -1,6 +1,7 @@
 #include "transition_system.h"
 
 #include "../utils/logging.h"
+#include "../task_utils/task_properties.h"
 
 #include <algorithm>
 #include <map>
@@ -82,11 +83,7 @@ namespace domain_abstractions {
             }
         }
         // TODO for now return all needed preconditions but keep missedfacts in case I want/must need it
-        if (missedFacts.empty()) {
-            return missedFacts;
-        } else {
-            return neededAssignments;
-        }
+        return missedFacts;
     }
 
     vector<FactPair> TransitionSystem::isGoal(vector<int> currentState) {

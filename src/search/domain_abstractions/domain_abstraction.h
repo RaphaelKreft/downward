@@ -9,7 +9,8 @@
 #include "transition_system.h"
 
 #include <unordered_map>
-
+#include <vector>
+#include <memory>
 
 namespace domain_abstractions {
 
@@ -27,18 +28,18 @@ namespace domain_abstractions {
 
         void reload(VariableGroupVectors newAbstraction);
 
-        bool isGoal(DomainAbstractedState *candidate);
+        bool isGoal(std::shared_ptr<DomainAbstractedState> candidate);
 
-        DomainAbstractedStates getSuccessors(DomainAbstractedState *state);
+        DomainAbstractedStates getSuccessors(std::shared_ptr<DomainAbstractedState> state);
 
-        DomainAbstractedState *getInitialAbstractState();
+        std::shared_ptr<DomainAbstractedState> getInitialAbstractState();
 
         bool
         groupAssignmentFulfillsFacts(const std::vector<int> &abstractCandidate, const std::vector<FactPair> &existingFactPairs);
 
-        VariableGroupVector getGroupAssignmentsForConcreteState(std::vector<int> stateValues); // State -> abstract state
+        VariableGroupVector getGroupAssignmentsForConcreteState(std::vector<int> &stateValues); // State -> abstract state
         int abstractStateLookupIndex(
-                std::vector<int> abstractStateRepresentation);// for given Assignments of a State, a position of Abstract state in hvalue map is returned
+                std::vector<int> &abstractStateRepresentation);// for given Assignments of a State, a position of Abstract state in hvalue map is returned
         const std::vector<FactPair> getGoalFacts();
 
         VariableGroupVectors getAbstractDomains();

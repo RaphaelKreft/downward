@@ -1,5 +1,7 @@
 #include "split.h"
 
+#include <vector>
+
 using namespace std;
 
 namespace domain_abstractions {

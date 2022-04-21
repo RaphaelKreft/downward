@@ -1,5 +1,8 @@
 #include "heuristic_basis.h"
 
+#include <vector>
+#include <memory>
+
 using namespace std;
 
 namespace domain_abstractions {
@@ -21,8 +24,8 @@ namespace domain_abstractions {
         // CONSTRUCT ABSTRACTION
         abstraction = createAbstraction(originalTask);
 
-        // CALCULATE HEURISTIC VALUES
-        heuristicValues = calculateHeuristicValues();
+        // PRECOMPUTE HEURISTIC VALUES TODO: For now disabled as we first test with on the fly calculation
+        //heuristicValues = calculateHeuristicValues();
     }
 
     int HeuristicBasis::getValue(State state) {
@@ -30,13 +33,15 @@ namespace domain_abstractions {
          Returns the heuristic value for a given State s. For that it is using the Stored heuristic values as well
          as the Domain Abstraction for mapping the state to an abstract one.
         */
+        vector<int> stateValues = state.get_unpacked_values();
         vector<int> correspondingAbstractState = abstraction->getGroupAssignmentsForConcreteState(
-                state.get_unpacked_values());
+                stateValues);
         int hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
-        return heuristicValues.at(hMapIndex);
+        //return heuristicValues.at(hMapIndex); TODO also disabled due to on the fly computation test
+        return calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
     }
 
-    unique_ptr<DomainAbstraction> HeuristicBasis::createAbstraction(TaskProxy originalTask) {
+    unique_ptr <DomainAbstraction> HeuristicBasis::createAbstraction(TaskProxy originalTask) {
         /*
          * This Method contains the CEGAR Algorithm for Domain Abstractions that will create the
          * Abstraction for a given originalTask
@@ -83,7 +88,7 @@ namespace domain_abstractions {
     }
 
 
-    unique_ptr<DomainAbstraction> HeuristicBasis::cegarTrivialAbstraction(TaskProxy originalTask) {
+    unique_ptr <DomainAbstraction> HeuristicBasis::cegarTrivialAbstraction(TaskProxy originalTask) {
         /*
          * This Method takes the original task and Creates a Domain Abstraction Object where the domains are built on
          * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0
@@ -115,30 +120,27 @@ namespace domain_abstractions {
         return unique_ptr<DomainAbstraction>(new DomainAbstraction(domains, originalTask, transitionSystem));
     }
 
-    shared_ptr<Trace> HeuristicBasis::cegarFindOptimalTrace(unique_ptr<DomainAbstraction> currentAbstraction) {
+    shared_ptr <Trace> HeuristicBasis::cegarFindOptimalTrace(unique_ptr <DomainAbstraction> currentAbstraction) {
         /*
          * Uses UniformCostSearch to find the best way through abstract space to goal. Return trace if found.
          * Else return nullptr -> Task is not solvable
          * */
-        DomainAbstractedState *initialState = currentAbstraction->getInitialAbstractState();
-        // comparable lambda expression to support priority queue
-        auto cmp = [](DomainAbstractedState *left, DomainAbstractedState *right) {
-            return (left->getGValue()) < (right->getGValue());
-        };
-        priority_queue<DomainAbstractedState *, DomainAbstractedStates, decltype(cmp)> openList(cmp);
+        shared_ptr<DomainAbstractedState> initialState = currentAbstraction->getInitialAbstractState();
+        priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
+                DomainAbstractedState::getComparator());
+
         openList.push(initialState);
         unordered_set<int> closedList;
-        // TODO: may point to invalid memory when openList as normal object but not when as sharedtr?!
         while (!openList.empty()) {
-            DomainAbstractedState *nextState = openList.top();
+            shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
             int nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
-                for (DomainAbstractedState *successorNode: abstraction->getSuccessors(nextState)) {
+                for (shared_ptr<DomainAbstractedState> successorNode: abstraction->getSuccessors(nextState)) {
                     successorNode->setParent(nextState);
                     if (abstraction->isGoal(successorNode)) {
-                        return extractSolution(successorNode);
+                        return DomainAbstractedState::extractSolution(successorNode);
                     }
                     openList.push(successorNode);
                 }
@@ -147,7 +149,7 @@ namespace domain_abstractions {
         return nullptr;
     }
 
-    shared_ptr<Flaw> HeuristicBasis::cegarFindFlaw(shared_ptr<Trace> trace, TaskProxy originalTask) {
+    shared_ptr <Flaw> HeuristicBasis::cegarFindFlaw(shared_ptr <Trace> trace, TaskProxy originalTask) {
         /*
          * Tries to apply trace in original task and returns a flaw if we cannot reach goal via this trace.
          * -> Precondition flaw and goal flaws
@@ -176,14 +178,46 @@ namespace domain_abstractions {
         return nullptr;
     }
 
-    void HeuristicBasis::cegarRefine(shared_ptr<Flaw> flaw,
-                                     unique_ptr<DomainAbstraction> currentDomainAbstraction) {
+    void HeuristicBasis::cegarRefine(shared_ptr <Flaw> flaw,
+                                     unique_ptr <DomainAbstraction> currentDomainAbstraction) {
         /*
          * Uses the splitter as well as the retrieved flaw to refine the abstraction
          * */
         VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, move(currentDomainAbstraction));
         // Update DomainAbstractionObject
         currentDomainAbstraction->reload(refinedAbstraction);
+    }
+
+    int HeuristicBasis::calculateHValueOnTheFly(VariableGroupVector startStateValues, int abstractStateIndex) {
+        /*
+         * Creates Abstract State Instance and returns distance to goal State (In Abstracted State Space) by using uniform cost search!
+         * Intended to be used when no heuristic values are precomputed after Abstraction construction.
+         *
+         * Returns INFINITY(INF) when solution cannot be found!
+         * */
+        shared_ptr<DomainAbstractedState> startAState = make_shared<DomainAbstractedState>(startStateValues,
+                                                                                           abstractStateIndex);
+
+        priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
+                DomainAbstractedState::getComparator());
+        openList.push(startAState);
+        unordered_set<int> closedList;
+        while (!openList.empty()) {
+            shared_ptr<DomainAbstractedState> nextState = openList.top();
+            openList.pop();
+            int nextState_ID = nextState->get_id();
+            if (closedList.find(nextState_ID) == closedList.end()) {
+                closedList.insert(nextState_ID);
+                for (shared_ptr<DomainAbstractedState> successorNode: abstraction->getSuccessors(nextState)) {
+                    successorNode->setParent(nextState);
+                    if (abstraction->isGoal(successorNode)) {
+                        return successorNode->getGValue();
+                    }
+                    openList.push(successorNode);
+                }
+            }
+        }
+        return INF;
     }
 
     vector<int> HeuristicBasis::calculateHeuristicValues() {
@@ -193,39 +227,6 @@ namespace domain_abstractions {
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
         vector<int> newHeuristicValues;
-
         return newHeuristicValues;
-        // 1. create goal state and set corresponding abstract state h-value to 0
-        /*vector<FactPair> goalFacts = abstraction->getGoalFacts();
-        vector<int> abstractEquivalent = abstraction->getGroupAssignmentsForConcreteState(goalFacts);
-        int index = abstraction->abstractStateLookupIndex(abstractEquivalent);
-        heuristicValues.insert(heuristicValues.begin() + index, 0);
-        // 2. create closed and open list
-        DomainAbstractedState *initialState = new DomainAbstractedState(abstractEquivalent, index);
-        initialState->setGValue(0);
-        // comparable lambda expression to support priority queue
-        auto cmp = [](DomainAbstractedState *left, DomainAbstractedState *right) {
-            return (left->getGValue()) < (right->getGValue());
-        };
-        priority_queue<DomainAbstractedState *, DomainAbstractedStates, decltype(cmp)> openList(cmp);
-        openList.push(initialState);
-        unordered_set<int> closedList;
-        // loop until all reachable states has been visited
-        while (!openList.empty()) {
-            DomainAbstractedState *nextState = openList.top();
-            openList.pop();
-            int nextState_ID = nextState->get_id();
-            if (closedList.find(nextState_ID) == closedList.end()) {
-                heuristicValues.insert(heuristicValues.begin() + nextState_ID, nextState->getGValue());
-                closedList.insert(nextState_ID);
-                // compute/get successors -> need incoming transitions therefor
-                // TODO: is it enough to generate predecessors in real space? or do we need those in Abstract space -> Guess: no! we expand whole state space
-                for (DomainAbstractedState *successorNode: abstraction->getSuccessors(nextState)) {
-                    successorNode->setParent(nextState);
-                    openList.push(successorNode);
-                }
-            }
-        }*/
-
     }
 }

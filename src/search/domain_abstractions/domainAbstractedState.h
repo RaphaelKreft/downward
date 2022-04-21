@@ -2,11 +2,17 @@
 #define DOMAIN_ABSTRACTIONS_DOMAINABSTRACTEDSTATE_H
 
 #include "data_structures.h"
-#include "split.h"
 
 #include <vector>
+#include <memory>
+#include <functional>
 
 namespace domain_abstractions {
+
+    class DomainAbstractedState;
+
+    using DomainAbstractedStates = std::vector<std::shared_ptr<DomainAbstractedState>>;
+
     class DomainAbstractedState {
         std::vector<int> groupAssignments; // for every var -> In which group inside dom(var) split are u?
 
@@ -14,7 +20,7 @@ namespace domain_abstractions {
         // search-info
         int incomingOperator_ID;
         int g_value;
-        DomainAbstractedState *parentAbstractState;
+        std::shared_ptr<DomainAbstractedState> parentAbstractState;
     public:
         DomainAbstractedState(std::vector<int> groupAssignments, int ID);
 
@@ -31,25 +37,36 @@ namespace domain_abstractions {
 
         void setGValue(int new_value);
 
-        void setParent(DomainAbstractedState *parent);
+        void setParent(std::shared_ptr<DomainAbstractedState> parent);
 
-        DomainAbstractedState *getParent();
-    };
+        std::shared_ptr<DomainAbstractedState> getParent();
 
-    static std::shared_ptr<Trace> extractSolution(DomainAbstractedState *goal) {
-        /*
-         * When used as search nodes, this function can extract a trace out of DomainAbstractedStates
-         * */
-        std::shared_ptr<Trace> abstractSolutionTrace = std::make_shared<Trace>();
-        DomainAbstractedState *currentState = goal;
-        abstractSolutionTrace->emplace_front(Transition(currentState->get_operator_id(), currentState->get_id()));
-        while (currentState->getParent() != nullptr) {
-            DomainAbstractedState *parent = currentState->getParent();
+        static std::shared_ptr<Trace> extractSolution(std::shared_ptr<DomainAbstractedState> goal) {
+            /*
+             * When used as search nodes, this function can extract a trace out of DomainAbstractedStates
+             * */
+            std::shared_ptr<Trace> abstractSolutionTrace = std::make_shared<Trace>();
+            std::shared_ptr<DomainAbstractedState> currentState = goal;
             abstractSolutionTrace->emplace_front(Transition(currentState->get_operator_id(), currentState->get_id()));
-            currentState = parent;
+            while (currentState->getParent() != nullptr) {
+                std::shared_ptr<DomainAbstractedState> parent = currentState->getParent();
+                abstractSolutionTrace->emplace_front(
+                        Transition(currentState->get_operator_id(), currentState->get_id()));
+                currentState = parent;
+            }
+            return abstractSolutionTrace;
         }
-        return abstractSolutionTrace;
-    }
+
+        static std::function<bool(std::shared_ptr<DomainAbstractedState>, std::shared_ptr<DomainAbstractedState>)>
+        getComparator() {
+            std::function<bool(std::shared_ptr<DomainAbstractedState>,
+                               std::shared_ptr<DomainAbstractedState>)> comparator = [](
+                    std::shared_ptr<DomainAbstractedState> left, std::shared_ptr<DomainAbstractedState> right) {
+                return (left->getGValue()) < (right->getGValue());
+            };
+            return comparator;
+        }
+    };
 }
 
 #endif

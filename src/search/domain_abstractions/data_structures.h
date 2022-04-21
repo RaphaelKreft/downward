@@ -1,13 +1,12 @@
 #ifndef DOMAIN_ABSTRACTIONS_DATA_STRUCTURES_H
 #define DOMAIN_ABSTRACTIONS_DATA_STRUCTURES_H
 
-#include "domainAbstractedState.h"
-
 #include <iostream>
 #include <deque>
 #include <map>
 #include <unordered_map>
 #include <vector>
+#include <memory>
 
 // make state from task_proxy class visible
 class State;
@@ -16,10 +15,14 @@ struct FactPair;
 
 namespace domain_abstractions {
 
+    struct Transition;
+
+    const int INF = std::numeric_limits<int>::max();
+
     using Transitions = std::vector<Transition>;
     using Trace = std::deque<Transition>;
     using Solution = std::deque<State>;
-    using DomainAbstractedStates = std::vector<DomainAbstractedState *>;
+    //using DomainAbstractedStates = std::vector<DomainAbstractedState *>;
     // same as in domain_abstracted_task.cc
     using ValueGroup = std::vector<int>;
     using ValueGroups = std::vector<ValueGroup>;
@@ -48,6 +51,7 @@ namespace domain_abstractions {
     };
 
     struct Flaw {
+        // TODO Members must have constant size or Flaw must be class
         std::vector<int> stateWhereFlawHappens; // from that we can later derive the abstract state
         std::vector<FactPair> missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
 

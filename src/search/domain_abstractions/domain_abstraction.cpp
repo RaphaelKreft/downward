@@ -13,7 +13,7 @@ namespace domain_abstractions {
         return variableGroupVectors;
     }
 
-    int DomainAbstraction::abstractStateLookupIndex(vector<int> abstractStateRepresentation) {
+    int DomainAbstraction::abstractStateLookupIndex(vector<int> &abstractStateRepresentation) {
         // maps All sates to a number in range {0,..., #Abstractstates-1}
         int index = 0;
         // loop over all abstraction parts/domains
@@ -27,13 +27,12 @@ namespace domain_abstractions {
         return goal_facts;
     }
 
-    VariableGroupVector DomainAbstraction::getGroupAssignmentsForConcreteState(vector<int> stateValues) {
+    VariableGroupVector DomainAbstraction::getGroupAssignmentsForConcreteState(vector<int> &stateValues) {
         /*
          * Given a concrete State this method returns an Abstract state aka group assignment
          * */
         VariableGroupVector abstractStateRepresentation;
         for (int i = 0; i < (int) stateValues.size(); i++) {
-            //TODO: State unpacked values has values of all vars?
             FactPair tmpPair = FactPair(i, stateValues[i]);
             abstractStateRepresentation.push_back(getGroupForFact(tmpPair));
         }
@@ -130,7 +129,7 @@ namespace domain_abstractions {
         return newNvalues;
     }
 
-    bool DomainAbstraction::isGoal(DomainAbstractedState *candidate) {
+    bool DomainAbstraction::isGoal(shared_ptr<DomainAbstractedState> candidate) {
         /*
          * Check if the abstract state id is present in goalAbstractStates List -> if yes it is a goal state
          * */
@@ -139,15 +138,15 @@ namespace domain_abstractions {
     }
 
 
-    DomainAbstractedStates DomainAbstraction::getSuccessors(DomainAbstractedState *state) {
+    DomainAbstractedStates DomainAbstraction::getSuccessors(shared_ptr<DomainAbstractedState> state) {
         /*
          * Returns a List of Abstract states (DomainAbstractedState) (representation of one state = vec<int>) that are the
-         * possible successors of the given Abstract state.
+         * possible successors of the given Abstract state. TODO we currently allow duplicates! use unordered set instead?
          * */
         DomainAbstractedStates assignmentsOfSuccessors;
         VariableGroupVector currentState = state->getGroupsAssignment();
 
-        // loop over all operators TODO: Is get num sufficient -> Ids from 0 to num ops?
+        // loop over all operators
         for (int operatorIndex = 0; operatorIndex < transition_system->get_num_operators(); operatorIndex++) {
             const vector<FactPair> preconditionsForOperator = transition_system->get_precondition_assignments_for_operator(
                     operatorIndex);
@@ -162,7 +161,7 @@ namespace domain_abstractions {
                 for (const FactPair &fact: postconditionsForOperator) {
                     successorGroupMapping.insert(successorGroupMapping.begin() + fact.var, getGroupForFact(fact));
                 }
-                DomainAbstractedState *successorState = new DomainAbstractedState(successorGroupMapping,
+                shared_ptr<DomainAbstractedState> successorState = make_shared<DomainAbstractedState>(successorGroupMapping,
                                                                                   abstractStateLookupIndex(
                                                                                           successorGroupMapping));
                 successorState->set_operator_id(operatorIndex);
@@ -172,7 +171,7 @@ namespace domain_abstractions {
         return assignmentsOfSuccessors;
     }
 
-    DomainAbstractedState *DomainAbstraction::getInitialAbstractState() {
+    shared_ptr<DomainAbstractedState> DomainAbstraction::getInitialAbstractState() {
         /*
          * Uses concrete Initial state and current variable-group mapping to derive abstract state
          * */
@@ -189,7 +188,7 @@ namespace domain_abstractions {
             abstractStateGroups.insert(abstractStateGroups.begin() + varIndex,
                                        variableGroupVectors[varIndex][domainIndex]);
         }
-        return new DomainAbstractedState(abstractStateGroups, abstractStateLookupIndex(abstractStateGroups));
+        return make_shared<DomainAbstractedState>(abstractStateGroups, abstractStateLookupIndex(abstractStateGroups));
     }
 
 }

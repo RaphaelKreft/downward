@@ -3,7 +3,6 @@
 
 #include "data_structures.h"
 #include "domain_abstraction.h"
-#include "transition_system.h"
 
 namespace domain_abstractions {
 

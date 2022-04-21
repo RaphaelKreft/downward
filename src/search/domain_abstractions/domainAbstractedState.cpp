@@ -1,5 +1,8 @@
 #include "domainAbstractedState.h"
+
 #include <cassert>
+#include <vector>
+#include <memory>
 
 using namespace std;
 
@@ -29,7 +32,7 @@ namespace domain_abstractions {
         g_value = new_value;
     }
 
-    void DomainAbstractedState::setParent(DomainAbstractedState *parent) {
+    void DomainAbstractedState::setParent(shared_ptr<DomainAbstractedState> parent) {
         parentAbstractState = parent;
     }
 
@@ -37,7 +40,7 @@ namespace domain_abstractions {
         incomingOperator_ID = op_id;
     }
 
-    DomainAbstractedState *DomainAbstractedState::getParent() {
+    shared_ptr<DomainAbstractedState> DomainAbstractedState::getParent() {
         return parentAbstractState;
     }
 }

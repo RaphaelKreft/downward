@@ -497,12 +497,12 @@ fast_downward_plugin(
         HELP "The 'DA-CEGAR' heuristic"
         SOURCES
             domain_abstractions/data_structures
-            domain_abstractions/domain_abstraction
-            domain_abstractions/domain_abstraction_heuristic
-            domain_abstractions/domainAbstractedState
-            domain_abstractions/heuristic_basis
             domain_abstractions/transition_system
             domain_abstractions/split
+            domain_abstractions/domainAbstractedState
+            domain_abstractions/domain_abstraction
+            domain_abstractions/heuristic_basis
+            domain_abstractions/domain_abstraction_heuristic
         DEPENDS TASK_PROPERTIES
 )
 

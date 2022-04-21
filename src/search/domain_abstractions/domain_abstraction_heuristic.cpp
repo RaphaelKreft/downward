@@ -1,16 +1,17 @@
-#include "../plugin.h"
 #include "domain_abstraction_heuristic.h"
+
+#include "../task_utils/task_properties.h"
 
 using namespace std;
 
 namespace domain_abstractions {
-    HeuristicBasis *DomainAbstractionHeuristic::generate_heuristic(const Options &opts, utils::LogProxy &log) {
+    shared_ptr<HeuristicBasis> DomainAbstractionHeuristic::generate_heuristic(const Options &opts, utils::LogProxy &log) {
         if (log.is_at_least_normal()) {
             log << "Initializing Domain Abstraction heuristic using CEGAR-Like Algorithm..." << endl;
         }
         int max_time = opts.get<double>("max_time");
         string splitMethod = opts.get<string>("split_method");
-        HeuristicBasis *h = new HeuristicBasis(max_time, log, task_proxy, splitMethod);
+        shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(max_time, log, task_proxy, splitMethod);
         // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
         task_properties::verify_no_axioms(task_proxy);
         task_properties::verify_no_conditional_effects(task_proxy);
@@ -29,7 +30,7 @@ namespace domain_abstractions {
          */
         State state = convert_ancestor_state(ancestor_state);
         int value = heuristic_function->getValue(state);
-        if (value == INFINITY) {
+        if (value == INF) {
             return DEAD_END;
         }
         assert(value >= 0);

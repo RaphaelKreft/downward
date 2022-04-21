@@ -3,6 +3,7 @@
 
 #include "../heuristic.h"
 #include "../option_parser.h"
+#include "../plugin.h"
 
 #include "heuristic_basis.h"
 
@@ -11,12 +12,12 @@ namespace domain_abstractions {
 
     class DomainAbstractionHeuristic : public Heuristic {
         // Heuristic instance that is stored and used to get h-values and construct it
-        HeuristicBasis *heuristic_function;
+        std::shared_ptr<HeuristicBasis> heuristic_function;
     protected:
         virtual int compute_heuristic(const State &ancestor_state) override;
 
     public:
-        HeuristicBasis *generate_heuristic(const options::Options &opts, utils::LogProxy &log);
+        std::shared_ptr<HeuristicBasis> generate_heuristic(const options::Options &opts, utils::LogProxy &log);
 
         explicit DomainAbstractionHeuristic(const options::Options &opts);
     };
