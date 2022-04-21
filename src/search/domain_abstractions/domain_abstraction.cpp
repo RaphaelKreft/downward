@@ -118,7 +118,7 @@ namespace domain_abstractions {
         // loop over all variables (we always have all variables considered in comparison to this hash for PDB)
         for (int i = 0; i < (int) variableGroupVectors.size(); i++) {
             int newValue = 1;
-            // loop over groups in abstract domain -> TODO: need to consider group size instead of domain-size of var
+            // loop over groups in abstract domain for current variable v_i
             for (int j = 0; j <= i - 1; j++) {
                 VariableGroupVector varGroupMapping = variableGroupVectors.at(j);
                 int numGroups = *max_element(varGroupMapping.begin(), varGroupMapping.end());
@@ -141,7 +141,7 @@ namespace domain_abstractions {
     DomainAbstractedStates DomainAbstraction::getSuccessors(shared_ptr<DomainAbstractedState> state) {
         /*
          * Returns a List of Abstract states (DomainAbstractedState) (representation of one state = vec<int>) that are the
-         * possible successors of the given Abstract state. TODO we currently allow duplicates! use unordered set instead?
+         * possible successors of the given Abstract state. TODO we currently allow duplicates! use unordered set instead? -> it my be sufficuient that we have closed list
          * */
         DomainAbstractedStates assignmentsOfSuccessors;
         VariableGroupVector currentState = state->getGroupsAssignment();
@@ -152,18 +152,17 @@ namespace domain_abstractions {
                     operatorIndex);
             // if operator is applicable create new abstract state out of it
             if (groupAssignmentFulfillsFacts(currentState, preconditionsForOperator)) {
-                // TODO get postcondition assignments -> contain all assignments for every variable or just of that that were changed ??
                 const vector<FactPair> postconditionsForOperator = transition_system->get_postcondition_assignments_for_operator(
                         operatorIndex);
-                VariableGroupVector successorGroupMapping;
+                VariableGroupVector successorGroupMapping = currentState;
                 successorGroupMapping.reserve(currentState.size());
-                // TODO For now assume all assignments included
                 for (const FactPair &fact: postconditionsForOperator) {
-                    successorGroupMapping.insert(successorGroupMapping.begin() + fact.var, getGroupForFact(fact));
+                    successorGroupMapping.at(fact.var) = getGroupForFact(fact);
                 }
                 shared_ptr<DomainAbstractedState> successorState = make_shared<DomainAbstractedState>(successorGroupMapping,
                                                                                   abstractStateLookupIndex(
                                                                                           successorGroupMapping));
+                // just set operator id, not parent yet, as this is not clear until expanded during search
                 successorState->set_operator_id(operatorIndex);
                 assignmentsOfSuccessors.push_back(successorState);
             }

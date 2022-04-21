@@ -51,11 +51,11 @@ namespace domain_abstractions {
     };
 
     struct Flaw {
-        // TODO Members must have constant size or Flaw must be class
-        std::vector<int> stateWhereFlawHappens; // from that we can later derive the abstract state
-        std::vector<FactPair> missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
+        // TODO Members must have constant size or Flaw must be class -> Do References work???
+        const std::vector<int> &stateWhereFlawHappens; // from that we can later derive the abstract state
+        const std::vector<FactPair> &missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
 
-        Flaw(std::vector<int> flawBaseState, std::vector<FactPair> missedFacts) : stateWhereFlawHappens(flawBaseState),
+        Flaw(std::vector<int> &flawBaseState, std::vector<FactPair> &missedFacts) : stateWhereFlawHappens(flawBaseState),
                                                                         missedFacts(missedFacts) {
         }
     };

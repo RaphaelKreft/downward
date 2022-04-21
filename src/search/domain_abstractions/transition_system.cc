@@ -73,16 +73,13 @@ namespace domain_abstractions {
          * Checks whether a Transition is applicable in the original Task! If Yes, an empty vector is returned, if not
          * The facts that are needed for fulfillment == all preconditions
          * */
-        // TODO: does it work with int vector instead of State?
         vector<FactPair> neededAssignments = get_precondition_assignments_for_operator(toApply.op_id);
-        vector<FactPair> stateFacts = task_properties::get_fact_pairs(currentState);
         vector<FactPair> missedFacts;
         for (FactPair &pair: neededAssignments) {
-            if (pair.value != lookup_value(stateFacts, pair.var)) {
+            if (pair.value != currentState.at(pair.var)) {
                 missedFacts.push_back(pair);
             }
         }
-        // TODO for now return all needed preconditions but keep missedfacts in case I want/must need it
         return missedFacts;
     }
 
@@ -91,22 +88,20 @@ namespace domain_abstractions {
          * Checks whether a Transition is applicable in the original Task! If Yes, an empty vector is returned, if not
          * The facts that are needed for fulfillment == all preconditions
          * */
-        // TODO: does it work with int vector instead of State?
         vector<FactPair> neededAssignments = task_properties::get_fact_pairs(originalTask.get_goals());
-        vector<FactPair> stateFacts = task_properties::get_fact_pairs(currentState);
         vector<FactPair> missedFacts;
         for (FactPair &pair: neededAssignments) {
-            if (pair.value != lookup_value(stateFacts, pair.var)) {
+            if (pair.value != currentState.at(pair.var)) {
                 missedFacts.push_back(pair);
             }
         }
-        // TODO for now return all needed preconditions but keep missedfacts in case I want/must need it
         return missedFacts;
     }
 
     vector<int> TransitionSystem::applyOperator(vector<int> currentValues, int op_id) {
-        //vector<int> currentValues = currenState.get_unpacked_values();
-        // TODO: all values(variables) in int vector and maybe change i/o of func to State?
+        /*
+         * CurrentState is modified by changing values implied by postconditions of a given operator(with op_id).
+         * */
         for (int i = 0; i < (int) currentValues.size(); i++) {
             int newVal = get_postcondition_value(op_id, i);
             if (newVal != -1) {
