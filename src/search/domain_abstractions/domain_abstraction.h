@@ -3,6 +3,7 @@
 
 #include "../task_utils/task_properties.h"
 #include "../task_proxy.h"
+#include "../utils/logging.h"
 
 #include "data_structures.h"
 #include "domainAbstractedState.h"
@@ -18,13 +19,15 @@ namespace domain_abstractions {
         const std::shared_ptr<TransitionSystem> transition_system;
         const State concrete_initial_state;
         const std::vector<FactPair> goal_facts;
+
         TaskProxy originalTask;
+        utils::LogProxy &log;
 
         VariableGroupVectors variableGroupVectors; // group mapping
         std::vector<int> nValuesForHash; // NValues need to compute perfect hash function for h-value lookup
 
     public:
-        explicit DomainAbstraction(VariableGroupVectors domains, TaskProxy originalTask, std::shared_ptr<TransitionSystem>);
+        explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask, std::shared_ptr<TransitionSystem>);
 
         void reload(VariableGroupVectors newAbstraction);
 

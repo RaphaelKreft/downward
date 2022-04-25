@@ -1,5 +1,7 @@
 #include "domain_abstraction.h"
 
+#include <unordered_set>
+
 using namespace std;
 
 namespace domain_abstractions {
@@ -80,16 +82,25 @@ namespace domain_abstractions {
          * Checks whether given Abstract state(by its group assignment for variables) fulfills a list of fact pairs
          * (variable assignments). Can be used to check preconditions and isGoal.
          * */
+        //if (log.is_at_least_normal()) {
+          //  log << "CEGAR - Abstraction: check fulfillment for abstract state: " << abstractCandidate << endl;
+          //  log << "Facts to fulfill: " << existingFactPairs << endl;
+        //}
         // loop over all group assignments
         for (int varIndex = 0; varIndex < (int) abstractCandidate.size(); varIndex++) {
             // get group number of abstract state
             int group = abstractCandidate.at(varIndex);
             // get group facts
             vector<FactPair> groupFacts = getVariableGroupFacts(varIndex, group);
-            // check if all existing factPairs contained
+            //if (log.is_at_least_normal()) {
+              //  log << "Group Facts for var " << varIndex << " : " << groupFacts << endl;
+            //}
+            // check if all existing factPairs contained TODO: per variable check!! -> make more performant!
             for (FactPair factPair: existingFactPairs) {
-                if (find(groupFacts.begin(), groupFacts.end(), factPair) == groupFacts.end()) {
-                    return false;
+                if (factPair.var == varIndex) { // TODO just temp fix -> use good proxy for existing fact pairs or merge all group facts and iterate at the end
+                    if (find(groupFacts.begin(), groupFacts.end(), factPair) == groupFacts.end()) {
+                        return false;
+                    }
                 }
             }
         }
@@ -97,12 +108,13 @@ namespace domain_abstractions {
     }
 
 
-    DomainAbstraction::DomainAbstraction(VariableGroupVectors domainMap, TaskProxy originalTask,
+    DomainAbstraction::DomainAbstraction(VariableGroupVectors domainMap, utils::LogProxy &log, TaskProxy originalTask,
                                          shared_ptr<TransitionSystem> transitionSystem) :
             transition_system(transitionSystem),
             concrete_initial_state(originalTask.get_initial_state()),
             goal_facts(task_properties::get_fact_pairs(originalTask.get_goals())),
             originalTask(originalTask),
+            log(log),
             variableGroupVectors(domainMap) {
         // precompute N-Values for perfect hash function that is needed for lookup
         nValuesForHash = computeNValues();
@@ -121,11 +133,12 @@ namespace domain_abstractions {
             // loop over groups in abstract domain for current variable v_i
             for (int j = 0; j <= i - 1; j++) {
                 VariableGroupVector varGroupMapping = variableGroupVectors.at(j);
-                int numGroups = *max_element(varGroupMapping.begin(), varGroupMapping.end());
+                int numGroups = *max_element(varGroupMapping.begin(), varGroupMapping.end()) + 1;
                 newValue *= numGroups;
             }
             newNvalues.push_back(newValue);
         }
+        log << newNvalues << endl; // TODO debug print
         return newNvalues;
     }
 
@@ -141,17 +154,27 @@ namespace domain_abstractions {
     DomainAbstractedStates DomainAbstraction::getSuccessors(shared_ptr<DomainAbstractedState> state) {
         /*
          * Returns a List of Abstract states (DomainAbstractedState) (representation of one state = vec<int>) that are the
-         * possible successors of the given Abstract state. TODO we currently allow duplicates! use unordered set instead? -> it my be sufficuient that we have closed list
+         * possible successors of the given Abstract state.
          * */
+        if (log.is_at_least_normal()) {
+            log << "CEGAR - Abstraction: Start generating successors..." << endl;
+        }
         DomainAbstractedStates assignmentsOfSuccessors;
+        unordered_set<int> alreadyFound; // store Id's of already found successors
         VariableGroupVector currentState = state->getGroupsAssignment();
 
         // loop over all operators
         for (int operatorIndex = 0; operatorIndex < transition_system->get_num_operators(); operatorIndex++) {
+            if (log.is_at_least_normal()) {
+                log << "CEGAR - Abstraction: Get preconditions for operator " << operatorIndex << endl;
+            }
             const vector<FactPair> preconditionsForOperator = transition_system->get_precondition_assignments_for_operator(
                     operatorIndex);
             // if operator is applicable create new abstract state out of it
             if (groupAssignmentFulfillsFacts(currentState, preconditionsForOperator)) {
+                if (log.is_at_least_normal()) {
+                    log << "CEGAR - Abstraction: operator-preconditions fulfilled! Apply postconditions... "<< endl;
+                }
                 const vector<FactPair> postconditionsForOperator = transition_system->get_postcondition_assignments_for_operator(
                         operatorIndex);
                 VariableGroupVector successorGroupMapping = currentState;
@@ -159,12 +182,19 @@ namespace domain_abstractions {
                 for (const FactPair &fact: postconditionsForOperator) {
                     successorGroupMapping.at(fact.var) = getGroupForFact(fact);
                 }
-                shared_ptr<DomainAbstractedState> successorState = make_shared<DomainAbstractedState>(successorGroupMapping,
-                                                                                  abstractStateLookupIndex(
-                                                                                          successorGroupMapping));
-                // just set operator id, not parent yet, as this is not clear until expanded during search
-                successorState->set_operator_id(operatorIndex);
-                assignmentsOfSuccessors.push_back(successorState);
+                int abstractStateIndex = abstractStateLookupIndex(successorGroupMapping);
+                // If we have not already found this successor add it to results
+                if (alreadyFound.find(abstractStateIndex) == alreadyFound.end()) {
+                    if (log.is_at_least_normal()) {
+                        log << "CEGAR - Abstraction: No double resulting successor abstract state: " << successorGroupMapping << endl;
+                    }
+                    alreadyFound.insert(abstractStateIndex);
+                    shared_ptr<DomainAbstractedState> successorState = make_shared<DomainAbstractedState>(successorGroupMapping,
+                                                                                                          abstractStateIndex);
+                    // just set operator id, not parent yet, as this is not clear until expanded during search
+                    successorState->set_operator_id(operatorIndex);
+                    assignmentsOfSuccessors.push_back(successorState);
+                }
             }
         }
         return assignmentsOfSuccessors;

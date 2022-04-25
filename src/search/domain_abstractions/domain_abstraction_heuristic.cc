@@ -1,6 +1,18 @@
 #include "domain_abstraction_heuristic.h"
 
 #include "../task_utils/task_properties.h"
+#include "../option_parser.h"
+#include "../plugin.h"
+
+#include "../task_utils/task_properties.h"
+#include "../utils/logging.h"
+
+#include <cstddef>
+#include <limits>
+#include <utility>
+
+
+// Test run: ./fast-downward.py --debug misc/tests/benchmarks/gripper/prob01.pddl --search "astar(cegarDA())
 
 using namespace std;
 
@@ -9,7 +21,7 @@ namespace domain_abstractions {
         if (log.is_at_least_normal()) {
             log << "Initializing Domain Abstraction heuristic using CEGAR-Like Algorithm..." << endl;
         }
-        int max_time = opts.get<double>("max_time");
+        double max_time = opts.get<double>("max_time");
         string splitMethod = opts.get<string>("split_method");
         shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(max_time, log, task_proxy, splitMethod);
         // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
@@ -22,6 +34,9 @@ namespace domain_abstractions {
     DomainAbstractionHeuristic::DomainAbstractionHeuristic(const options::Options &opts)
             : Heuristic(opts),
               heuristic_function(generate_heuristic(opts, log)) {
+    }
+
+    DomainAbstractionHeuristic::~DomainAbstractionHeuristic() {
     }
 
     int DomainAbstractionHeuristic::compute_heuristic(const State &ancestor_state) {
@@ -46,12 +61,6 @@ namespace domain_abstractions {
                 "maximum sum of abstract states over all abstractions",
                 "infinity",
                 Bounds("1", "infinity"));
-        parser.add_option<int>(
-                "max_transitions",
-                "maximum sum of real transitions (excluding self-loops) over "
-                " all abstractions",
-                "1M",
-                Bounds("0", "infinity"));
         parser.add_option<double>(
                 "max_time",
                 "maximum time in seconds for building abstractions",
@@ -69,5 +78,5 @@ namespace domain_abstractions {
             return make_shared<DomainAbstractionHeuristic>(opts);
     }
 
-    static Plugin<Evaluator> _plugin("cegarDA", _parse);
+    static Plugin<Evaluator> _plugin("domain_abstraction", _parse);
 }

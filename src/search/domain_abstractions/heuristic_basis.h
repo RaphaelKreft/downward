@@ -24,15 +24,15 @@ namespace domain_abstractions {
 
     class HeuristicBasis {
         double max_time;
-        utils::CountdownTimer timer;
         utils::LogProxy &log;
 
         std::shared_ptr<TransitionSystem> transitionSystem;
         std::unique_ptr<DomainAbstraction> abstraction;
         //std::vector<int> heuristicValues; TODO: Disabled because of on the fly computation
         DomainSplitter domainSplitter;
+        utils::CountdownTimer timer;
     public:
-        explicit HeuristicBasis(int max_time, utils::LogProxy &log, TaskProxy originalTask, std::string splitMethod);
+        explicit HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask, std::string splitMethod);
 
         int getValue(State state);
 

@@ -11,15 +11,15 @@ namespace domain_abstractions {
     class HeuristicBasis;
 
     class DomainAbstractionHeuristic : public Heuristic {
-        // Heuristic instance that is stored and used to get h-values and construct it
+        //Heuristic instance that is stored and used to get h-values and construct it
         std::shared_ptr<HeuristicBasis> heuristic_function;
     protected:
         virtual int compute_heuristic(const State &ancestor_state) override;
 
     public:
         std::shared_ptr<HeuristicBasis> generate_heuristic(const options::Options &opts, utils::LogProxy &log);
-
-        explicit DomainAbstractionHeuristic(const options::Options &opts);
+        DomainAbstractionHeuristic(const options::Options &opts);
+        ~DomainAbstractionHeuristic();
     };
 }
 
