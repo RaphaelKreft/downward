@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/downward.iml" filepath="$PROJECT_DIR$/.idea/downward.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/fast-downward.iml" filepath="$PROJECT_DIR$/.idea/fast-downward.iml" />
     </modules>
   </component>
 </project>

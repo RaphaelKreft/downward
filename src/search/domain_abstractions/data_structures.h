@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 #include <memory>
+#include <cassert>
 
 // make state from task_proxy class visible
 class State;
@@ -24,9 +25,6 @@ namespace domain_abstractions {
     using Solution = std::deque<State>;
     //using DomainAbstractedStates = std::vector<DomainAbstractedState *>;
     // same as in domain_abstracted_task.cc
-    using ValueGroup = std::vector<int>;
-    using ValueGroups = std::vector<ValueGroup>;
-    using VarToGroups = std::unordered_map<int, ValueGroups>;
     // Group mapping vectors
     using VariableGroupVector = std::vector<int>;
     using VariableGroupVectors = std::vector<VariableGroupVector>;
@@ -51,12 +49,22 @@ namespace domain_abstractions {
     };
 
     struct Flaw {
-        // TODO Members must have constant size or Flaw must be class -> Do References work???
-        const std::vector<int> &stateWhereFlawHappens; // from that we can later derive the abstract state
-        const std::vector<FactPair> &missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
+        std::shared_ptr<std::vector<int>> stateWhereFlawHappens; // from that we can later derive the abstract state
+        std::shared_ptr<std::vector<FactPair>> missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
 
-        Flaw(std::vector<int> &flawBaseState, std::vector<FactPair> &missedFacts) : stateWhereFlawHappens(flawBaseState),
-                                                                        missedFacts(missedFacts) {
+        Flaw(const std::vector<int>& flawBaseState, const std::shared_ptr<std::vector<FactPair>>& missedF) {
+            assert(!missedF->empty());
+            assert(!flawBaseState.empty());
+            stateWhereFlawHappens = std::make_shared<std::vector<int>>(flawBaseState);
+            missedFacts = missedF;
+        }
+
+        std::vector<int> getStateWhereFlawHappensCopy() {
+            std::vector<int> copyVec;
+            for (int & i : *stateWhereFlawHappens) {
+                copyVec.push_back(i);
+            }
+            return copyVec;
         }
     };
 }

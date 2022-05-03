@@ -31,29 +31,25 @@ namespace domain_abstractions {
 
         void reload(VariableGroupVectors newAbstraction);
 
-        bool isGoal(std::shared_ptr<DomainAbstractedState> candidate);
+        bool isGoal(const std::shared_ptr<DomainAbstractedState>& candidate);
 
-        DomainAbstractedStates getSuccessors(std::shared_ptr<DomainAbstractedState> state);
+        DomainAbstractedStates getSuccessors(const std::shared_ptr<DomainAbstractedState>& state);
 
         std::shared_ptr<DomainAbstractedState> getInitialAbstractState();
 
         bool
-        groupAssignmentFulfillsFacts(const std::vector<int> &abstractCandidate, const std::vector<FactPair> &existingFactPairs);
+        groupAssignmentFulfillsFacts(std::vector<int> abstractCandidate, const std::vector<FactPair> &factsToFulfill);
 
         VariableGroupVector getGroupAssignmentsForConcreteState(std::vector<int> &stateValues); // State -> abstract state
         int abstractStateLookupIndex(
                 std::vector<int> &abstractStateRepresentation);// for given Assignments of a State, a position of Abstract state in hvalue map is returned
-        const std::vector<FactPair> getGoalFacts();
 
         VariableGroupVectors getAbstractDomains();
 
         int getDomainIndexOfVariableValue(int variable, int value);
 
-        TaskProxy getOriginalTask() {
-            return originalTask;
-        };
-    private:
         std::vector<FactPair> getVariableGroupFacts(int varIndex, int groupNumber);
+    private:
 
         int getGroupForFact(FactPair fact);
 

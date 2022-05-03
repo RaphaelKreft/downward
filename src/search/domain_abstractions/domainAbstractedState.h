@@ -3,6 +3,7 @@
 
 #include "data_structures.h"
 
+#include <utility>
 #include <vector>
 #include <memory>
 #include <functional>
@@ -18,22 +19,22 @@ namespace domain_abstractions {
 
         int abstract_state_id;
         // search-info
-        int incomingOperator_ID;
-        int g_value;
+        int incomingOperator_ID{};
+        int g_value{};
         std::shared_ptr<DomainAbstractedState> parentAbstractState;
     public:
         DomainAbstractedState(std::vector<int> groupAssignments, int ID);
 
         std::vector<int> getGroupsAssignment();
 
-        int get_id();
+        int get_id() const;
 
-        int get_operator_id();
+        int get_operator_id() const;
 
         void set_operator_id(int op_id);
 
         // searchInfo Part -> These Tasks can also be Nodes
-        int getGValue();
+        int getGValue() const;
 
         void setGValue(int new_value);
 
@@ -44,15 +45,16 @@ namespace domain_abstractions {
         static std::shared_ptr<Trace> extractSolution(std::shared_ptr<DomainAbstractedState> goal) {
             /*
              * When used as search nodes, this function can extract a trace out of DomainAbstractedStates
+             * DO NOT INSERT INIT STATE! -> trace length = pathlength -1
              * */
             std::shared_ptr<Trace> abstractSolutionTrace = std::make_shared<Trace>();
-            std::shared_ptr<DomainAbstractedState> currentState = goal;
-            abstractSolutionTrace->emplace_front(Transition(currentState->get_operator_id(), currentState->get_id()));
+            std::shared_ptr<DomainAbstractedState> currentState = std::move(goal);
+            // now loop over search nodes and construct
             while (currentState->getParent() != nullptr) {
-                std::shared_ptr<DomainAbstractedState> parent = currentState->getParent();
                 abstractSolutionTrace->emplace_front(
                         Transition(currentState->get_operator_id(), currentState->get_id()));
-                currentState = parent;
+                currentState = currentState->getParent();
+                      // TODO: Here an error was located
             }
             return abstractSolutionTrace;
         }
@@ -61,7 +63,7 @@ namespace domain_abstractions {
         getComparator() {
             std::function<bool(std::shared_ptr<DomainAbstractedState>,
                                std::shared_ptr<DomainAbstractedState>)> comparator = [](
-                    std::shared_ptr<DomainAbstractedState> left, std::shared_ptr<DomainAbstractedState> right) {
+                    const std::shared_ptr<DomainAbstractedState>& left, const std::shared_ptr<DomainAbstractedState>& right) {
                 return (left->getGValue()) < (right->getGValue());
             };
             return comparator;

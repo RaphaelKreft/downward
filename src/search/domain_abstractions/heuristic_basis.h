@@ -27,35 +27,35 @@ namespace domain_abstractions {
         utils::LogProxy &log;
 
         std::shared_ptr<TransitionSystem> transitionSystem;
-        std::unique_ptr<DomainAbstraction> abstraction;
+        std::shared_ptr<DomainAbstraction> abstraction;
         //std::vector<int> heuristicValues; TODO: Disabled because of on the fly computation
         DomainSplitter domainSplitter;
         utils::CountdownTimer timer;
     public:
-        explicit HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask, std::string splitMethod);
+        explicit HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask, const std::string& splitMethod);
 
-        int getValue(State state);
+        int getValue(const State& state);
 
         void construct(TaskProxy originalTask);
 
     protected:
-        std::unique_ptr<DomainAbstraction> createAbstraction(TaskProxy originalTask);
+        std::shared_ptr<DomainAbstraction> createAbstraction(TaskProxy originalTask);
 
         std::vector<int> calculateHeuristicValues();
 
         bool cegarShouldTerminate();
 
-        std::shared_ptr<Trace> cegarFindOptimalTrace(std::unique_ptr<DomainAbstraction> currentAbstraction);
+        std::shared_ptr<Trace> cegarFindOptimalTrace(const std::shared_ptr<DomainAbstraction>& currentAbstraction);
 
-        void cegarRefine(std::shared_ptr<Flaw> flaw, std::unique_ptr<DomainAbstraction> currentDomainAbstraction);
+        void cegarRefine(const std::shared_ptr<Flaw>& flaw, const std::shared_ptr<DomainAbstraction>& currentDomainAbstraction);
 
-        std::shared_ptr<Flaw> cegarFindFlaw(std::shared_ptr<Trace> trace, TaskProxy originalTask);
+        std::shared_ptr<Flaw> cegarFindFlaw(const std::shared_ptr<Trace>& trace, TaskProxy originalTask);
 
         Solution cegarExtractPath(std::shared_ptr<Trace> trace, TaskProxy originalTask);
 
-        std::unique_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
+        std::shared_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
 
-        int calculateHValueOnTheFly(VariableGroupVector startStateValues, int abstractStateIndex);
+        int calculateHValueOnTheFly(const VariableGroupVector& startStateValues, int abstractStateIndex);
     };
 }
 

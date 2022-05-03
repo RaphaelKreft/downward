@@ -9,10 +9,10 @@ namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
 
     HeuristicBasis::HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask,
-                                   string splitMethodSuggestion) :
+                                   const string& splitMethodSuggestion) :
             max_time(max_time), log(log),
-            transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask)),
-            domainSplitter(DomainSplitter(DomainSplitter::getEnumForString(splitMethodSuggestion))), timer(max_time) {
+            transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
+            domainSplitter(DomainSplitter(DomainSplitter::getEnumForString(splitMethodSuggestion), log)), timer(max_time) {
         // reserve memory padding, at this time timer is also already started!
         utils::reserve_extra_memory_padding(memory_padding_in_mb);
     }
@@ -38,7 +38,7 @@ namespace domain_abstractions {
         //heuristicValues = calculateHeuristicValues();
     }
 
-    int HeuristicBasis::getValue(State state) {
+    int HeuristicBasis::getValue(const State& state) {
         /*
          Returns the heuristic value for a given State s. For that it is using the Stored heuristic values as well
          as the Domain Abstraction for mapping the state to an abstract one.
@@ -51,7 +51,7 @@ namespace domain_abstractions {
         return calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
     }
 
-    unique_ptr <DomainAbstraction> HeuristicBasis::createAbstraction(TaskProxy originalTask) {
+    shared_ptr <DomainAbstraction> HeuristicBasis::createAbstraction(TaskProxy originalTask) {
         /*
          * This Method contains the CEGAR Algorithm for Domain Abstractions that will create the
          * Abstraction for a given originalTask
@@ -60,31 +60,33 @@ namespace domain_abstractions {
         if (log.is_at_least_normal()) {
             log << "CEGAR: create initial trivial abstraction.." << endl;
         }
-        unique_ptr<DomainAbstraction> currentAbstraction(cegarTrivialAbstraction(originalTask));
+        shared_ptr<DomainAbstraction> currentAbstraction = cegarTrivialAbstraction(originalTask);
         if (log.is_at_least_normal()) {
             log << "CEGAR: initial abstraction created, now run refinement loop..." << endl;
         }
+        int rounds = 0;
         while (not cegarShouldTerminate()) {
-            log << "CEGAR: Current Abstraction is: " << currentAbstraction->getAbstractDomains() << endl;
-            shared_ptr<Trace> t = cegarFindOptimalTrace(move(currentAbstraction));
+            rounds++;
+            log << "CEGAR round " << rounds << ": --Current Abstraction--> " << currentAbstraction->getAbstractDomains() << endl;
+            shared_ptr<Trace> t = cegarFindOptimalTrace(currentAbstraction);
             if (!t) {
                 // When no trace in Abstract space was found -> Task Unsolvable -> log and break
                 if (log.is_at_least_normal()) {
-                    log << "CEGAR: Abstract task is unsolvable. -> Normal task is unsolvable" << endl;
+                    log << "CEGAR round " << rounds << ": Abstract task is unsolvable. -> Normal task is unsolvable" << endl;
                 }
                 break;
             }
             shared_ptr<Flaw> f = cegarFindFlaw(t, originalTask);
             if (!f) {
                 if (log.is_at_least_normal()) {
-                    log << "CEGAR: Found concrete solution during refinement!!!" << endl;
+                    log << "CEGAR round " << rounds << ": Found concrete solution during refinement!!!" << endl;
                     // maybe show solution??
                     //log << cegarExtractPath(t, originalTask);
                 }
                 break;
             }
             // If a Flaw has been found we need to refine the Abstraction
-            cegarRefine(f, move(currentAbstraction));
+            cegarRefine(f, currentAbstraction);
         }
         return currentAbstraction;
     }
@@ -92,23 +94,23 @@ namespace domain_abstractions {
     bool HeuristicBasis::cegarShouldTerminate() {
         if (timer.is_expired()) {
             if (log.is_at_least_normal()) {
-                log << "CEGAR: Time expired!" << endl;
+                log << "CEGAR Termination Check: Time expired!" << endl;
             }
             return true;
         } else if (!utils::extra_memory_padding_is_reserved()) {
             if (log.is_at_least_normal()) {
-                log << "CEGAR: Reached memory limit." << endl;
+                log << "CEGAR Termination Check: Reached memory limit." << endl;
             }
             return true;
         }
         if (log.is_at_least_normal()) {
-            log << "CEGAR: Start another round of refinement! Time elapsed until now: " << timer.get_elapsed_time() << endl;
+            log << "CEGAR Termination Check: Start another round of refinement! Time elapsed until now: " << timer.get_elapsed_time() << endl;
         }
         return false;
     }
 
 
-    unique_ptr <DomainAbstraction> HeuristicBasis::cegarTrivialAbstraction(TaskProxy originalTask) {
+    shared_ptr <DomainAbstraction> HeuristicBasis::cegarTrivialAbstraction(TaskProxy originalTask) {
         /*
          * This Method takes the original task and Creates a Domain Abstraction Object where the domains are built on
          * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0
@@ -137,86 +139,67 @@ namespace domain_abstractions {
             // Add domain group mapping for single variable to list
             domains.push_back(varVec);
         }
-        return unique_ptr<DomainAbstraction>(new DomainAbstraction(domains, log, originalTask, transitionSystem));
+        return make_shared<DomainAbstraction>(domains, log, originalTask, transitionSystem);
     }
 
-    shared_ptr <Trace> HeuristicBasis::cegarFindOptimalTrace(unique_ptr <DomainAbstraction> currentAbstraction) {
+    shared_ptr <Trace> HeuristicBasis::cegarFindOptimalTrace(const shared_ptr <DomainAbstraction>& currentAbstraction) {
         /*
          * Uses UniformCostSearch to find the best way through abstract space to goal. Return trace if found.
          * Else return nullptr -> Task is not solvable
          * */
         if (log.is_at_least_normal()) {
-            log << "CEGAR: try to find optimal trace in abstract state space..." << endl;
-        }
-        if (log.is_at_least_normal()) {
-            log << "CEGAR: -- get initial abstract state and init priority queue..." << endl;
+            log << "CEGAR Find Optimal Trace: try to find optimal trace in abstract state space..." << endl;
+            log << currentAbstraction->getAbstractDomains() << endl;
         }
         shared_ptr<DomainAbstractedState> initialState = currentAbstraction->getInitialAbstractState();
+        initialState->setGValue(0); // g-values must be set manually
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
-        if (log.is_at_least_normal()) {
-            log << "CEGAR: -- push initial state in openList and create closed list..." << endl;
-        }
         openList.push(initialState);
         unordered_set<int> closedList;
-        if (log.is_at_least_normal()) {
-            log << "CEGAR: -- enter search loop..." << endl;
-        }
+
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
             int nextState_ID = nextState->get_id();
-            if (log.is_at_least_normal()) {
-                log << "CEGAR: -- check if in closed list already..." << endl;
-            }
             if (closedList.find(nextState_ID) == closedList.end()) {
-                if (log.is_at_least_normal()) {
-                    log << "CEGAR: -- not in closed list, insert in closed list.." << endl;
-                }
                 closedList.insert(nextState_ID);
                 DomainAbstractedStates successorVector = currentAbstraction->getSuccessors(nextState);
-                if (log.is_at_least_normal()) {
-                    log << "CEGAR: -- now loop over " << successorVector.size() << " successors..." << endl;
-                }
-                for (int successorIndex = 0; successorIndex < (int) successorVector.size(); successorIndex++) {
-                    shared_ptr<DomainAbstractedState> successorNode = successorVector.at(successorIndex);
-                    if (log.is_at_least_normal()) {
-                        log << "CEGAR: ---succ: set parent and perform goal check..." << endl;
-                    }
+
+                for (const auto& successorNode : successorVector) {
                     successorNode->setParent(nextState);
                     if (currentAbstraction->isGoal(successorNode)) {
                         if (log.is_at_least_normal()) {
-                            log << "CEGAR: ---succ: Found Goal!! No extract solution trace..." << endl;
+                            log << "CEGAR Find Optimal Trace: Found Goal!! No extract solution trace..." << endl;
                         }
                         return DomainAbstractedState::extractSolution(successorNode);
                     }
-                    if (log.is_at_least_normal()) {
-                        log << "CEGAR: ---succ: successor is no goal, add to open List" << endl;
-                    }
+
                     openList.push(successorNode);
                 }
             }
         }
         if (log.is_at_least_normal()) {
-            log << "CEGAR: -- No solution found in Abstract space..." << endl;
+            log << "CEGAR Find Optimal Trace: NO SOLUTION found in Abstract space..." << endl;
         }
         return nullptr;
     }
 
-    shared_ptr <Flaw> HeuristicBasis::cegarFindFlaw(shared_ptr <Trace> trace, TaskProxy originalTask) {
+    shared_ptr <Flaw> HeuristicBasis::cegarFindFlaw(const shared_ptr <Trace>& trace, TaskProxy originalTask) {
         /*
          * Tries to apply trace in original task and returns a flaw if we cannot reach goal via this trace.
          * -> Precondition flaw and goal flaws
          * */
         if (log.is_at_least_normal()) {
-            log << "CEGAR: now try to find a flaw based on following trace (op-id, target-id).." << endl;
-            for (auto it = trace->begin(); it != trace->end(); ++it)
-                log << ' ' << *it;
+            log << "CEGAR Find Flaw: now try to find a flaw based on following trace (op-id, target-id).." << endl;
+            for (auto & it : *trace)
+                log << ' ' << it;
             log << endl;
         }
         vector<int> currState = originalTask.get_initial_state().get_unpacked_values();
         // follow trace
-        while (!trace->empty()) {
+        log << "Check if precondition flaw..." << endl;
+        while (!(trace->empty())) {
             // get next transition candidate
             Transition nextTransition = trace->front();
             trace->pop_front();
@@ -224,40 +207,52 @@ namespace domain_abstractions {
                                                                                               nextTransition);
             // when missed-facts is not empty we have a precondition flaw -> preconditions not fulfilled in curr  state
             if (!missedPreconditionFacts.empty()) {
-                return make_shared<Flaw>(currState, missedPreconditionFacts);
+                shared_ptr<vector<FactPair>> missedF(new vector<FactPair>(missedPreconditionFacts));
+                log << "--> Needed Fact Pairs would have been: " << transitionSystem->get_precondition_assignments_for_operator(nextTransition.op_id) << endl;
+                log << " --> Precondition Flaw at transition " << nextTransition << endl;
+                return make_shared<Flaw>(currState, missedF);
             }
             // if we have no missed facts we can apply operator and continue to follow the trace
             currState = transitionSystem->applyOperator(currState, nextTransition.op_id);
         }
         // we get here when we followed trace without precondition flaw
         // now check for goal flaw
+        log << "check if goal violation..." << endl;
         vector<FactPair> missedGoalFacts = transitionSystem->isGoal(currState);
+        log << "received missed goal facts..." << endl;
         if (!missedGoalFacts.empty()) {
-            return make_shared<Flaw>(currState, missedGoalFacts);
+            log << "--> Goal Fact violation Flaw!" << endl;
+            shared_ptr<vector<FactPair>> missedGF(new vector<FactPair>(missedGoalFacts));
+            return make_shared<Flaw>(currState, missedGF);
         }
+        log << "--> No Flaw!" << endl;
         return nullptr;
     }
 
-    void HeuristicBasis::cegarRefine(shared_ptr <Flaw> flaw,
-                                     unique_ptr <DomainAbstraction> currentDomainAbstraction) {
+    void HeuristicBasis::cegarRefine(const shared_ptr <Flaw>& flaw,
+                                     const shared_ptr <DomainAbstraction>& currentDomainAbstraction) {
         /*
          * Uses the splitter as well as the retrieved flaw to refine the abstraction
          * */
         if (log.is_at_least_normal()) {
-            log << "CEGAR: refine abstraction on basis of found flaw.." << endl;
+            log << "CEGAR Refine: refine abstraction on basis of found flaw.." << endl;
         }
-        VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, move(currentDomainAbstraction));
+        VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, currentDomainAbstraction);
         // Update DomainAbstractionObject
+        log << "CEGAR Refine: reload abstraction instance using refinement result Abstraction: " << refinedAbstraction << endl;
         currentDomainAbstraction->reload(refinedAbstraction);
     }
 
-    int HeuristicBasis::calculateHValueOnTheFly(VariableGroupVector startStateValues, int abstractStateIndex) {
+    int HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector& startStateValues, int abstractStateIndex) {
         /*
          * Creates Abstract State Instance and returns distance to goal State (In Abstracted State Space) by using uniform cost search!
          * Intended to be used when no heuristic values are precomputed after Abstraction construction.
          *
          * Returns INFINITY(INF) when solution cannot be found!
          * */
+        if (log.is_at_least_normal()) {
+            log << "NOW USE ABSTRACTION TO CALCULATE H-VALUE" << endl;
+        }
         shared_ptr<DomainAbstractedState> startAState = make_shared<DomainAbstractedState>(startStateValues,
                                                                                            abstractStateIndex);
 
@@ -271,7 +266,7 @@ namespace domain_abstractions {
             int nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
-                for (shared_ptr<DomainAbstractedState> successorNode: abstraction->getSuccessors(nextState)) {
+                for (const shared_ptr<DomainAbstractedState>& successorNode: abstraction->getSuccessors(nextState)) {
                     successorNode->setParent(nextState);
                     if (abstraction->isGoal(successorNode)) {
                         return successorNode->getGValue();

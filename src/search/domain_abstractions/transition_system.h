@@ -21,15 +21,15 @@ namespace domain_abstractions {
     class TransitionSystem {
         const std::vector<std::vector<FactPair>> preconditions_by_operator;
         const std::vector<std::vector<FactPair>> postconditions_by_operator;
-        const OperatorsProxy &operators_proxy;
-        const TaskProxy &originalTask;
+        TaskProxy originalTask;
+        utils::LogProxy &log;
 
         // Transitions from and to other abstract states.
         std::vector<Transitions> incoming;
         std::vector<Transitions> outgoing;
 
     public:
-        explicit TransitionSystem(const OperatorsProxy &ops, const TaskProxy &proxy);
+        explicit TransitionSystem(const OperatorsProxy &ops, TaskProxy proxy, utils::LogProxy &log);
 
         const std::vector<Transitions> &get_incoming_transitions() const;
 
@@ -39,17 +39,17 @@ namespace domain_abstractions {
 
         int get_postcondition_value(int op_id, int var) const;
 
-        const std::vector<FactPair> get_precondition_assignments_for_operator(int operatorID) const;
+        std::vector<FactPair> get_precondition_assignments_for_operator(int operatorID) const;
 
-        const std::vector<FactPair> get_postcondition_assignments_for_operator(int operatorID) const;
+        std::vector<FactPair> get_postcondition_assignments_for_operator(int operatorID) const;
 
         // Difference to those methods in task_properties is, that there return the facts that have been missed!
         // = Facts that must have been true additionally for the wanted outcome!
-        std::vector<FactPair> transitionApplicable(std::vector<int> currentState, Transition toApply);
+        std::vector<FactPair> transitionApplicable(std::vector<int> currentState, Transition toApply) const;
 
-        std::vector<FactPair> isGoal(std::vector<int> currentState);
+        std::vector<FactPair> isGoal(const std::vector<int>& currentState);
 
-        std::vector<int> applyOperator(std::vector<int> currenValues, int op_id);
+        std::vector<int> applyOperator(std::vector<int> currenValues, int op_id) const;
 
         int get_num_states() const;
 

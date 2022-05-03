@@ -12,7 +12,7 @@
 #include <utility>
 
 
-// Test run: ./fast-downward.py --debug misc/tests/benchmarks/gripper/prob01.pddl --search "astar(cegarDA())
+// Test run: ./fast-downward.py --debug misc/tests/benchmarks/gripper/prob01.pddl --search "astar(domain_abstraction())"
 
 using namespace std;
 
@@ -20,6 +20,7 @@ namespace domain_abstractions {
     shared_ptr<HeuristicBasis> DomainAbstractionHeuristic::generate_heuristic(const Options &opts, utils::LogProxy &log) {
         if (log.is_at_least_normal()) {
             log << "Initializing Domain Abstraction heuristic using CEGAR-Like Algorithm..." << endl;
+            task_properties::dump_goals(task_proxy.get_goals());
         }
         double max_time = opts.get<double>("max_time");
         string splitMethod = opts.get<string>("split_method");
@@ -27,6 +28,7 @@ namespace domain_abstractions {
         // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
         task_properties::verify_no_axioms(task_proxy);
         task_properties::verify_no_conditional_effects(task_proxy);
+        // TODO: Debug print of Goal Facts
         h->construct(task_proxy);
         return h;
     }
@@ -36,8 +38,7 @@ namespace domain_abstractions {
               heuristic_function(generate_heuristic(opts, log)) {
     }
 
-    DomainAbstractionHeuristic::~DomainAbstractionHeuristic() {
-    }
+    DomainAbstractionHeuristic::~DomainAbstractionHeuristic() = default;
 
     int DomainAbstractionHeuristic::compute_heuristic(const State &ancestor_state) {
         /*

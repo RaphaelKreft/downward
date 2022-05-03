@@ -1,6 +1,8 @@
 #ifndef DOMAIN_ABSTRACTIONS_SPLIT_H
 #define DOMAIN_ABSTRACTIONS_SPLIT_H
 
+#include "../utils/logging.h"
+
 #include "data_structures.h"
 #include "domain_abstraction.h"
 
@@ -13,15 +15,16 @@ namespace domain_abstractions {
 
     class DomainSplitter {
         SplitMethod currentMethod;
+        utils::LogProxy &log;
 
     public:
-        DomainSplitter(SplitMethod method);
+        DomainSplitter(SplitMethod method, utils::LogProxy &log);
 
-        VariableGroupVectors split(std::shared_ptr<Flaw> flaw,
-                                   std::unique_ptr<DomainAbstraction> currentAbstraction);
+        VariableGroupVectors split(const std::shared_ptr<Flaw>& flaw,
+                                   const std::shared_ptr<DomainAbstraction>& currentAbstraction);
 
         // map string to ENUM
-        static SplitMethod getEnumForString(std::string splitMethodSuggestion) {
+        static SplitMethod getEnumForString(const std::string& splitMethodSuggestion) {
             if (splitMethodSuggestion == "HardSplit") {
                 return SplitMethod::HARDSPLIT;
             } else {
@@ -31,8 +34,8 @@ namespace domain_abstractions {
         }
 
     private:
-        VariableGroupVectors performHardSplit(std::shared_ptr<Flaw> flaw,
-                                              std::unique_ptr<DomainAbstraction> currentAbstraction);
+        VariableGroupVectors performHardSplit(const std::shared_ptr<Flaw>& flaw,
+                                              const std::shared_ptr<DomainAbstraction>& currentAbstraction);
     };
 
 }
