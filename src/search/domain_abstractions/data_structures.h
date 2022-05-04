@@ -8,6 +8,7 @@
 #include <vector>
 #include <memory>
 #include <cassert>
+#include <limits>
 
 // make state from task_proxy class visible
 class State;
