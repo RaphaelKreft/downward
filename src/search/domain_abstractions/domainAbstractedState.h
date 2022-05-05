@@ -64,7 +64,7 @@ namespace domain_abstractions {
             std::function<bool(std::shared_ptr<DomainAbstractedState>,
                                std::shared_ptr<DomainAbstractedState>)> comparator = [](
                     const std::shared_ptr<DomainAbstractedState>& left, const std::shared_ptr<DomainAbstractedState>& right) {
-                return (left->getGValue()) < (right->getGValue());
+                return (left->getGValue()) > (right->getGValue()); // TODO > < changed because weird c++ comparator logic
             };
             return comparator;
         }

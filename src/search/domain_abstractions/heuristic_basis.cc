@@ -153,6 +153,7 @@ namespace domain_abstractions {
         }
         shared_ptr<DomainAbstractedState> initialState = currentAbstraction->getInitialAbstractState();
         initialState->setGValue(0); // g-values must be set manually
+        // PQ returns node with smallest g value -> Shortest Path until now
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         openList.push(initialState);
@@ -250,23 +251,22 @@ namespace domain_abstractions {
          *
          * Returns INFINITY(INF) when solution cannot be found!
          * */
-        if (log.is_at_least_normal()) {
-            log << "NOW USE ABSTRACTION TO CALCULATE H-VALUE" << endl;
-        }
         shared_ptr<DomainAbstractedState> startAState = make_shared<DomainAbstractedState>(startStateValues,
                                                                                            abstractStateIndex);
-
+        startAState->setGValue(0);
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         openList.push(startAState);
         unordered_set<int> closedList;
+
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
             int nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
-                for (const shared_ptr<DomainAbstractedState>& successorNode: abstraction->getSuccessors(nextState)) {
+                DomainAbstractedStates successorVector = abstraction->getSuccessors(nextState);
+                for (const auto& successorNode : successorVector) {
                     successorNode->setParent(nextState);
                     if (abstraction->isGoal(successorNode)) {
                         return successorNode->getGValue();
@@ -275,6 +275,7 @@ namespace domain_abstractions {
                 }
             }
         }
+        // If no Solution found return INF
         return INF;
     }
 
