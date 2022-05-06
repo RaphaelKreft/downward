@@ -38,7 +38,7 @@ def setup_environment():
     return benchmarks_dir, suite, environment
 
 
-REVISION = "domainAbstactions"
+REVISION = "8c382e631"
 REPO = os.environ["DOWNWARD_REPO"]
 BENCHMARKS_DIR, SUITE, ENVIRONMENT = setup_environment()
 
