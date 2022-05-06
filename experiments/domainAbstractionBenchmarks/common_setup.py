@@ -27,6 +27,8 @@ def parse_args():
 
 ARGS = parse_args()
 
+PARTITION = "infai_2"
+
 
 DEFAULT_OPTIMAL_SUITE = [
     'agricola-opt18-strips', 'airport', 'barman-opt11-strips',
@@ -41,7 +43,7 @@ DEFAULT_OPTIMAL_SUITE = [
     'openstacks-strips', 'organic-synthesis-opt18-strips',
     'organic-synthesis-split-opt18-strips', 'parcprinter-08-strips',
     'parcprinter-opt11-strips', 'parking-opt11-strips',
-    'parking-opt14-strips', 'pegsol-08-strips',
+    'parking-opt14-strips', 'pathways-noneg', 'pegsol-08-strips',
     'pegsol-opt11-strips', 'petri-net-alignment-opt18-strips',
     'pipesworld-notankage', 'pipesworld-tankage', 'psr-small', 'rovers',
     'satellite', 'scanalyzer-08-strips', 'scanalyzer-opt11-strips',
@@ -73,7 +75,7 @@ DEFAULT_SATISFICING_SUITE = [
     'organic-synthesis-sat18-strips',
     'organic-synthesis-split-sat18-strips', 'parcprinter-08-strips',
     'parcprinter-sat11-strips', 'parking-sat11-strips',
-    'parking-sat14-strips', 'pathways',
+    'parking-sat14-strips', 'pathways', 'pathways-noneg',
     'pegsol-08-strips', 'pegsol-sat11-strips', 'philosophers',
     'pipesworld-notankage', 'pipesworld-tankage', 'psr-large',
     'psr-middle', 'psr-small', 'rovers', 'satellite',
@@ -170,6 +172,7 @@ class IssueExperiment(FastDownwardExperiment):
     DEFAULT_TEST_SUITE = ["depot:p01.pddl", "gripper:prob01.pddl"]
 
     DEFAULT_TABLE_ATTRIBUTES = [
+        "acyclic",
         "cost",
         "coverage",
         "error",
@@ -182,6 +185,8 @@ class IssueExperiment(FastDownwardExperiment):
         "planner_memory",
         "planner_time",
         "quality",
+        "reopened",
+        "reopened_until_last_jump",
         "run_dir",
         "score_evaluations",
         "score_expansions",
@@ -367,6 +372,13 @@ class IssueExperiment(FastDownwardExperiment):
         if attributes is None:
             attributes = self.DEFAULT_SCATTER_PLOT_ATTRIBUTES
 
+        def find_category(run1, run2):
+            exp1 = run1.get("expansions_until_last_jump")
+            exp2 = run2.get("expansions_until_last_jump")
+            if (exp1 is not None) and (exp2 is not None) and (exp1 < exp2):
+                print(run1["id"])
+            return run1["lm_gen"]
+
         def make_scatter_plot(config_nick, rev1, rev2, attribute, config_nick2=None):
             name = "-".join([self.name, rev1, rev2, attribute, config_nick])
             if config_nick2 is not None:
@@ -378,7 +390,7 @@ class IssueExperiment(FastDownwardExperiment):
                 filter_algorithm=[algo1, algo2],
                 attributes=[attribute],
                 relative=relative,
-                get_category=lambda run1, run2: run1["domain"])
+                get_category=find_category)
             report(
                 self.eval_dir,
                 os.path.join(scatter_dir, rev1 + "-" + rev2, name))
@@ -390,6 +402,8 @@ class IssueExperiment(FastDownwardExperiment):
                             config.nick, attributes):
                         make_scatter_plot(config.nick, rev1, rev2, attribute)
             for nick1, nick2, rev1, rev2, attribute in additional:
+                print(nick1, nick2, rev1, rev2)
                 make_scatter_plot(nick1, rev1, rev2, attribute, config_nick2=nick2)
+            print("and this")
 
-        self.add_step(step_name, lambda: make_scatter_plots)
+        self.add_step(step_name, make_scatter_plots)

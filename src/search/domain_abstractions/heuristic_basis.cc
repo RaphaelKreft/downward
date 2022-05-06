@@ -67,7 +67,7 @@ namespace domain_abstractions {
         int rounds = 0;
         while (not cegarShouldTerminate()) {
             rounds++;
-            log << "CEGAR round " << rounds << ": --Current Abstraction--> " << currentAbstraction->getAbstractDomains() << endl;
+            //log << "CEGAR round " << rounds << ": --Current Abstraction--> " << currentAbstraction->getAbstractDomains() << endl;
             shared_ptr<Trace> t = cegarFindOptimalTrace(currentAbstraction);
             if (!t) {
                 // When no trace in Abstract space was found -> Task Unsolvable -> log and break
@@ -103,7 +103,7 @@ namespace domain_abstractions {
             }
             return true;
         }
-        if (log.is_at_least_normal()) {
+        if (log.is_at_least_debug()) {
             log << "CEGAR Termination Check: Start another round of refinement! Time elapsed until now: " << timer.get_elapsed_time() << endl;
         }
         return false;
@@ -147,7 +147,7 @@ namespace domain_abstractions {
          * Uses UniformCostSearch to find the best way through abstract space to goal. Return trace if found.
          * Else return nullptr -> Task is not solvable
          * */
-        if (log.is_at_least_normal()) {
+        if (log.is_at_least_debug()) {
             log << "CEGAR Find Optimal Trace: try to find optimal trace in abstract state space..." << endl;
             log << currentAbstraction->getAbstractDomains() << endl;
         }
@@ -170,7 +170,7 @@ namespace domain_abstractions {
                 for (const auto& successorNode : successorVector) {
                     successorNode->setParent(nextState);
                     if (currentAbstraction->isGoal(successorNode)) {
-                        if (log.is_at_least_normal()) {
+                        if (log.is_at_least_debug()) {
                             log << "CEGAR Find Optimal Trace: Found Goal!! No extract solution trace..." << endl;
                         }
                         return DomainAbstractedState::extractSolution(successorNode);
@@ -191,7 +191,7 @@ namespace domain_abstractions {
          * Tries to apply trace in original task and returns a flaw if we cannot reach goal via this trace.
          * -> Precondition flaw and goal flaws
          * */
-        if (log.is_at_least_normal()) {
+        if (log.is_at_least_debug()) {
             log << "CEGAR Find Flaw: now try to find a flaw based on following trace (op-id, target-id).." << endl;
             for (auto & it : *trace)
                 log << ' ' << it;
@@ -199,7 +199,7 @@ namespace domain_abstractions {
         }
         vector<int> currState = originalTask.get_initial_state().get_unpacked_values();
         // follow trace
-        log << "Check if precondition flaw..." << endl;
+        //log << "Check if precondition flaw..." << endl;
         while (!(trace->empty())) {
             // get next transition candidate
             Transition nextTransition = trace->front();
@@ -209,8 +209,8 @@ namespace domain_abstractions {
             // when missed-facts is not empty we have a precondition flaw -> preconditions not fulfilled in curr  state
             if (!missedPreconditionFacts.empty()) {
                 shared_ptr<vector<FactPair>> missedF(new vector<FactPair>(missedPreconditionFacts));
-                log << "--> Needed Fact Pairs would have been: " << transitionSystem->get_precondition_assignments_for_operator(nextTransition.op_id) << endl;
-                log << " --> Precondition Flaw at transition " << nextTransition << endl;
+                //log << "--> Needed Fact Pairs would have been: " << transitionSystem->get_precondition_assignments_for_operator(nextTransition.op_id) << endl;
+                //log << " --> Precondition Flaw at transition " << nextTransition << endl;
                 return make_shared<Flaw>(currState, missedF);
             }
             // if we have no missed facts we can apply operator and continue to follow the trace
@@ -218,15 +218,15 @@ namespace domain_abstractions {
         }
         // we get here when we followed trace without precondition flaw
         // now check for goal flaw
-        log << "check if goal violation..." << endl;
+        //log << "check if goal violation..." << endl;
         vector<FactPair> missedGoalFacts = transitionSystem->isGoal(currState);
-        log << "received missed goal facts..." << endl;
+        //log << "received missed goal facts..." << endl;
         if (!missedGoalFacts.empty()) {
-            log << "--> Goal Fact violation Flaw!" << endl;
+            //log << "--> Goal Fact violation Flaw!" << endl;
             shared_ptr<vector<FactPair>> missedGF(new vector<FactPair>(missedGoalFacts));
             return make_shared<Flaw>(currState, missedGF);
         }
-        log << "--> No Flaw!" << endl;
+        //log << "--> No Flaw!" << endl;
         return nullptr;
     }
 
@@ -235,12 +235,12 @@ namespace domain_abstractions {
         /*
          * Uses the splitter as well as the retrieved flaw to refine the abstraction
          * */
-        if (log.is_at_least_normal()) {
+        if (log.is_at_least_debug()) {
             log << "CEGAR Refine: refine abstraction on basis of found flaw.." << endl;
         }
         VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, currentDomainAbstraction);
         // Update DomainAbstractionObject
-        log << "CEGAR Refine: reload abstraction instance using refinement result Abstraction: " << refinedAbstraction << endl;
+        //log << "CEGAR Refine: reload abstraction instance using refinement result Abstraction: " << refinedAbstraction << endl;
         currentDomainAbstraction->reload(refinedAbstraction);
     }
 
