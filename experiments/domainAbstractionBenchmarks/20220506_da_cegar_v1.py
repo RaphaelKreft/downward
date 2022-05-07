@@ -47,9 +47,13 @@ precomp_times = [900, 600, 1200]
 CONFIGS = []
 
 for time in precomp_times:
-	CONFIGS.append(common_setup.IssueConfig(f"daOTF-{time}", ["--search", f"astar(domain_abstraction(max_time={time}))"]))
-	CONFIGS.append(common_setup.IssueConfig(f"cegar-{time}", ["--search", f"astar(cegar(max_time={time}))"]))
+    CONFIGS.append(common_setup.IssueConfig(f"daOTF-{time}", ["--search", f"astar(domain_abstraction(max_time={time}))"]))
+    CONFIGS.append(common_setup.IssueConfig(f"cegar-{time}", ["--search", f"astar(cegar(max_time={time}))"]))
 
+print(f"We have {len(CONFIGS)} configurations to run for every task!")
+print(f"We think repo is at: {REPO}")
+print(f"We think benchmarks are at: {BENCHMARKS_DIR}")
+print(f"We have {len(SUITE)} tasks in our suite!")
 		
 exp = common_setup.IssueExperiment(
     revisions=[REVISION],
