@@ -128,7 +128,6 @@ namespace domain_abstractions {
             }
             newNvalues.push_back(newValue);
         }
-        log << "New N-Values for Hash: " << newNvalues << endl; // TODO debug print
         return newNvalues;
     }
 

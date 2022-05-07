@@ -28,7 +28,6 @@ namespace domain_abstractions {
         // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
         task_properties::verify_no_axioms(task_proxy);
         task_properties::verify_no_conditional_effects(task_proxy);
-        // TODO: Debug print of Goal Facts
         h->construct(task_proxy);
         return h;
     }

@@ -51,8 +51,6 @@ namespace domain_abstractions {
 
         std::shared_ptr<Flaw> cegarFindFlaw(const std::shared_ptr<Trace>& trace, TaskProxy originalTask);
 
-        Solution cegarExtractPath(std::shared_ptr<Trace> trace, TaskProxy originalTask);
-
         std::shared_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
 
         int calculateHValueOnTheFly(const VariableGroupVector& startStateValues, int abstractStateIndex);
