@@ -46,9 +46,15 @@ namespace domain_abstractions {
         vector<int> stateValues = state.get_unpacked_values();
         vector<int> correspondingAbstractState = abstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
-        int hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
-        //return heuristicValues.at(hMapIndex); TODO also disabled due to on the fly computation test
-        return calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
+        long long hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
+        if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
+            // if we have not calculated before, calculate and store
+            int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
+            heuristicValues.insert(pair<long long , int>(hMapIndex, h_val));
+            return h_val;
+        }
+        log << "Access already stored hvals" << endl;
+        return heuristicValues.at(hMapIndex);
     }
 
     shared_ptr <DomainAbstraction> HeuristicBasis::createAbstraction(TaskProxy originalTask) {
@@ -81,7 +87,10 @@ namespace domain_abstractions {
                 if (log.is_at_least_normal()) {
                     log << "CEGAR round " << rounds << ": Found concrete solution during refinement!!!" << endl;
                     // maybe show solution??
-                    //log << cegarExtractPath(t, originalTask);
+                    for (auto &transition : *t) {
+                        log << transition.op_id << ",";
+                    }
+                    log << endl;
                 }
                 break;
             }
@@ -157,12 +166,12 @@ namespace domain_abstractions {
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         openList.push(initialState);
-        unordered_set<int> closedList;
+        unordered_set<long long> closedList;
 
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
-            int nextState_ID = nextState->get_id();
+            long long nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
                 DomainAbstractedStates successorVector = currentAbstraction->getSuccessors(nextState);
@@ -244,7 +253,7 @@ namespace domain_abstractions {
         currentDomainAbstraction->reload(refinedAbstraction);
     }
 
-    int HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector& startStateValues, int abstractStateIndex) {
+    int HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector& startStateValues, long long abstractStateIndex) {
         /*
          * Creates Abstract State Instance and returns distance to goal State (In Abstracted State Space) by using uniform cost search!
          * Intended to be used when no heuristic values are precomputed after Abstraction construction.
@@ -257,12 +266,12 @@ namespace domain_abstractions {
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         openList.push(startAState);
-        unordered_set<int> closedList;
+        unordered_set<long long> closedList;
 
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
-            int nextState_ID = nextState->get_id();
+            long long nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
                 DomainAbstractedStates successorVector = abstraction->getSuccessors(nextState);

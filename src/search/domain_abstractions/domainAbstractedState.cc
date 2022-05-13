@@ -8,7 +8,7 @@
 using namespace std;
 
 namespace domain_abstractions {
-    DomainAbstractedState::DomainAbstractedState(vector<int> groupAssignments, int ID) :
+    DomainAbstractedState::DomainAbstractedState(vector<int> groupAssignments, long long ID) :
             groupAssignments(std::move(groupAssignments)), abstract_state_id(ID) {
     }
 
@@ -16,7 +16,7 @@ namespace domain_abstractions {
         return groupAssignments;
     }
 
-    int DomainAbstractedState::get_id() const {
+    long long DomainAbstractedState::get_id() const {
         return abstract_state_id;
     }
 

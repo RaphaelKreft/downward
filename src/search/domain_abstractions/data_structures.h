@@ -32,10 +32,10 @@ namespace domain_abstractions {
 
     struct Transition {
         int op_id;
-        // Id of state that is the target (Can be rel or abstract state
-        int target_id;
+        // Id of state that is the target (Can be real or abstract state)
+        long long target_id;
 
-        Transition(int op_id, int target_id)
+        Transition(int op_id, long long target_id)
                 : op_id(op_id),
                   target_id(target_id) {
         }

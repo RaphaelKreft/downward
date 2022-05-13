@@ -28,7 +28,7 @@ namespace domain_abstractions {
 
         std::shared_ptr<TransitionSystem> transitionSystem;
         std::shared_ptr<DomainAbstraction> abstraction;
-        //std::vector<int> heuristicValues; TODO: Disabled because of on the fly computation
+        std::map<long long, int> heuristicValues;
         DomainSplitter domainSplitter;
         utils::CountdownTimer timer;
     public:
@@ -53,7 +53,7 @@ namespace domain_abstractions {
 
         std::shared_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
 
-        int calculateHValueOnTheFly(const VariableGroupVector& startStateValues, int abstractStateIndex);
+        int calculateHValueOnTheFly(const VariableGroupVector& startStateValues, long long abstractStateIndex);
     };
 }
 

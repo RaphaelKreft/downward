@@ -24,7 +24,7 @@ namespace domain_abstractions {
         utils::LogProxy &log;
 
         VariableGroupVectors variableGroupVectors; // group mapping
-        std::vector<int> nValuesForHash; // NValues need to compute perfect hash function for h-value lookup
+        std::vector<long long> nValuesForHash; // NValues need to compute perfect hash function for h-value lookup
 
     public:
         explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask, std::shared_ptr<TransitionSystem>);
@@ -41,7 +41,7 @@ namespace domain_abstractions {
         groupAssignmentFulfillsFacts(std::vector<int> abstractCandidate, const std::vector<FactPair> &factsToFulfill);
 
         VariableGroupVector getGroupAssignmentsForConcreteState(std::vector<int> &stateValues); // State -> abstract state
-        int abstractStateLookupIndex(
+        long long abstractStateLookupIndex(
                 std::vector<int> &abstractStateRepresentation);// for given Assignments of a State, a position of Abstract state in hvalue map is returned
 
         VariableGroupVectors getAbstractDomains();
@@ -53,7 +53,7 @@ namespace domain_abstractions {
 
         int getGroupForFact(FactPair fact);
 
-        std::vector<int> computeNValues();
+        void computeNValues();
     };
 }
 
