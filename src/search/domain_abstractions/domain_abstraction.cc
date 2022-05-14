@@ -161,20 +161,16 @@ namespace domain_abstractions {
     DomainAbstractedStates DomainAbstraction::getSuccessors(const shared_ptr<DomainAbstractedState>& state) {
         /*
          * Returns a List of Abstract states (DomainAbstractedState) (representation of one state = vec<int>) that are the
-         * possible successors of the given Abstract state.
+         * possible successors of the given Abstract state. It uses a map to store already found successors, so that duplicated are
          * */
-        DomainAbstractedStates successorList;
-        unordered_set<long long> alreadyFound; // store Id's of already found successors
-        //VariableGroupVector currentState = state->getGroupsAssignment();
+        map<long long, shared_ptr<DomainAbstractedState>> alreadyFound; // store Id's of already found successors
 
         // loop over all operators
         for (int operatorIndex = 0; operatorIndex < transition_system->get_num_operators(); operatorIndex++) {
             vector<FactPair> preconditionsForOperator = transition_system->get_precondition_assignments_for_operator(
                     operatorIndex);
-            // if operator is applicable create new abstract state out of it
-            bool op_is_applicable = groupAssignmentFulfillsFacts(state->getGroupsAssignment(), preconditionsForOperator);
             //log << "Is op " << operatorIndex << " applicable for abstr-state " << state->getGroupsAssignment() << " : " << op_is_applicable << endl;
-            if (op_is_applicable) {
+            if (groupAssignmentFulfillsFacts(state->getGroupsAssignment(), preconditionsForOperator)) {
                 vector<FactPair> postconditionsForOperator = transition_system->get_postcondition_assignments_for_operator(
                         operatorIndex);
                 //log << "APPLICABLE, apply postconditions: " << postconditionsForOperator << endl;
@@ -185,20 +181,32 @@ namespace domain_abstractions {
                 }
 
                 long long abstractStateIndex = abstractStateLookupIndex(successorGroupMapping);
-                // If we have not already found this successor add it to results
-                if (alreadyFound.find(abstractStateIndex) == alreadyFound.end()) {
-                    alreadyFound.insert(abstractStateIndex);
+                int newGValue = state->getGValue() + task_properties::get_operator_costs(originalTask)[operatorIndex];
+                // If we have not already found this successor -> add it to results
+                if ((alreadyFound.find(abstractStateIndex) == alreadyFound.end())) {
                     shared_ptr<DomainAbstractedState> successorState = make_shared<DomainAbstractedState>(successorGroupMapping,
                                                                                                           abstractStateIndex);
                     // just set operator id, not parent yet, as this is not clear until expanded during search
                     successorState->set_operator_id(operatorIndex);
-
-                    int newGValue = state->getGValue() + task_properties::get_operator_costs(originalTask)[operatorIndex];
                     successorState->setGValue(newGValue);
-                    successorList.push_back(successorState);
+                    alreadyFound.insert(pair<long long, shared_ptr<DomainAbstractedState>>(abstractStateIndex, successorState));
+                } else if (newGValue < alreadyFound.at(abstractStateIndex)->getGValue()) {
+                    // we found a cheaper operator to reach the same successor!
+                    alreadyFound.at(abstractStateIndex)->setGValue(newGValue);
+                    alreadyFound.at(abstractStateIndex)->set_operator_id(operatorIndex);
                 }
             }
         }
+        // extract values from map
+        DomainAbstractedStates successorList;
+        successorList.reserve(alreadyFound.size());
+        for (const auto& pair: alreadyFound) {
+            successorList.push_back(pair.second);
+        }
+        // Sort by Operator cost (needed in case of early goal check in uniform cost search)
+        sort(successorList.begin(), successorList.end(), DomainAbstractedState::getComparator());
+        reverse(successorList.begin(), successorList.end());
+
         return successorList;
     }
 

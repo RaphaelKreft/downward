@@ -53,7 +53,7 @@ namespace domain_abstractions {
             heuristicValues.insert(pair<long long , int>(hMapIndex, h_val));
             return h_val;
         }
-        log << "Access already stored hvals" << endl;
+        //log << "Access already stored hvals" << endl;
         return heuristicValues.at(hMapIndex);
     }
 
@@ -231,11 +231,11 @@ namespace domain_abstractions {
         vector<FactPair> missedGoalFacts = transitionSystem->isGoal(currState);
         //log << "received missed goal facts..." << endl;
         if (!missedGoalFacts.empty()) {
-            //log << "--> Goal Fact violation Flaw!" << endl;
+            log << "--> Goal Fact violation Flaw!" << endl;
             shared_ptr<vector<FactPair>> missedGF(new vector<FactPair>(missedGoalFacts));
             return make_shared<Flaw>(currState, missedGF);
         }
-        //log << "--> No Flaw!" << endl;
+        log << "--> No Flaw!" << endl;
         return nullptr;
     }
 
@@ -263,6 +263,7 @@ namespace domain_abstractions {
         shared_ptr<DomainAbstractedState> startAState = make_shared<DomainAbstractedState>(startStateValues,
                                                                                            abstractStateIndex);
         startAState->setGValue(0);
+        // Define Open and Closed List
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         openList.push(startAState);
@@ -274,9 +275,10 @@ namespace domain_abstractions {
             long long nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
+                // We are using early goal check, thus the successor vector must be sorted!!!
                 DomainAbstractedStates successorVector = abstraction->getSuccessors(nextState);
                 for (const auto& successorNode : successorVector) {
-                    successorNode->setParent(nextState);
+                    //successorNode->setParent(nextState);
                     if (abstraction->isGoal(successorNode)) {
                         return successorNode->getGValue();
                     }
@@ -285,6 +287,9 @@ namespace domain_abstractions {
             }
         }
         // If no Solution found return INF
+        if (log.is_at_least_debug()) {
+            log << "OTF-HVAL-Calculation: Cannot find path to goal, return INF.." << endl;
+        }
         return INF;
     }
 
@@ -295,6 +300,8 @@ namespace domain_abstractions {
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
         vector<int> newHeuristicValues;
+        // perform backward-Search from Goal using Dijkstras Algorithm
+
         return newHeuristicValues;
     }
 }
