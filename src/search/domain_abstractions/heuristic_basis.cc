@@ -174,17 +174,16 @@ namespace domain_abstractions {
             long long nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
+                if (currentAbstraction->isGoal(nextState)) {
+                    if (log.is_at_least_debug()) {
+                        log << "CEGAR Find Optimal Trace: Found Goal!! No extract solution trace..." << endl;
+                    }
+                    return DomainAbstractedState::extractSolution(nextState);
+                }
+                // generate successors and add them to openList
                 DomainAbstractedStates successorVector = currentAbstraction->getSuccessors(nextState);
-
                 for (const auto& successorNode : successorVector) {
                     successorNode->setParent(nextState);
-                    if (currentAbstraction->isGoal(successorNode)) {
-                        if (log.is_at_least_debug()) {
-                            log << "CEGAR Find Optimal Trace: Found Goal!! No extract solution trace..." << endl;
-                        }
-                        return DomainAbstractedState::extractSolution(successorNode);
-                    }
-
                     openList.push(successorNode);
                 }
             }
@@ -275,13 +274,12 @@ namespace domain_abstractions {
             long long nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
+                if (abstraction->isGoal(nextState)) {
+                    return nextState->getGValue();
+                }
                 // We are using early goal check, thus the successor vector must be sorted!!!
                 DomainAbstractedStates successorVector = abstraction->getSuccessors(nextState);
                 for (const auto& successorNode : successorVector) {
-                    //successorNode->setParent(nextState);
-                    if (abstraction->isGoal(successorNode)) {
-                        return successorNode->getGValue();
-                    }
                     openList.push(successorNode);
                 }
             }

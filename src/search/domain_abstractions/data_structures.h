@@ -23,7 +23,6 @@ namespace domain_abstractions {
 
     using Transitions = std::vector<Transition>;
     using Trace = std::deque<Transition>;
-    using Solution = std::deque<State>;
     //using DomainAbstractedStates = std::vector<DomainAbstractedState *>;
     // same as in domain_abstracted_task.cc
     // Group mapping vectors

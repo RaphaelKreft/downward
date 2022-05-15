@@ -204,8 +204,8 @@ namespace domain_abstractions {
             successorList.push_back(pair.second);
         }
         // Sort by Operator cost (needed in case of early goal check in uniform cost search)
-        sort(successorList.begin(), successorList.end(), DomainAbstractedState::getComparator());
-        reverse(successorList.begin(), successorList.end());
+        //sort(successorList.begin(), successorList.end(), DomainAbstractedState::getComparator());
+        //reverse(successorList.begin(), successorList.end());
 
         return successorList;
     }
