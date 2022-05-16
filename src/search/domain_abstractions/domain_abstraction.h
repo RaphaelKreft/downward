@@ -25,7 +25,8 @@ namespace domain_abstractions {
 
         VariableGroupVectors variableGroupVectors; // group mapping
         std::vector<long long> nValuesForHash; // NValues need to compute perfect hash function for h-value lookup
-
+        long long numAbstractStates;
+        std::shared_ptr<TransitionSystem> abstract_transition_system; // abstract transition system is calculated just for final abstraction
     public:
         explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask, std::shared_ptr<TransitionSystem>);
 
@@ -49,7 +50,15 @@ namespace domain_abstractions {
         int getDomainIndexOfVariableValue(int variable, int value);
 
         std::vector<FactPair> getVariableGroupFacts(int varIndex, int groupNumber);
+
+        long long int getNumAbstractStates() const;
+
+        std::vector<std::shared_ptr<DomainAbstractedState>> getAbstractGoalStates();
+
+        DomainAbstractedStates getPredecessors(const std::shared_ptr<DomainAbstractedState> &state);
+
     private:
+        void generateAbstractTransitionSystem();
 
         int getGroupForFact(FactPair fact);
 

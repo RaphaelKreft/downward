@@ -496,6 +496,7 @@ fast_downward_plugin(
         NAME DOMAIN_ABSTRACTION_HEURISTIC
         HELP "The 'DA-CEGAR' heuristic"
         SOURCES
+            domain_abstractions/utils
             domain_abstractions/data_structures
             domain_abstractions/transition_system
             domain_abstractions/split

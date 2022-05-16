@@ -297,9 +297,30 @@ namespace domain_abstractions {
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
-        vector<int> newHeuristicValues;
+        vector<int> newHeuristicValues(abstraction->getNumAbstractStates(), INF);
         // perform backward-Search from Goal using Dijkstras Algorithm
+        priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
+                DomainAbstractedState::getComparator());
+        unordered_set<long long> closedList;
+        // 1. Create All possible goal states (In Abstract State Space) and add them to openList
+        for (const auto& goalState: abstraction->getAbstractGoalStates()) {
+            openList.push(goalState);
+        }
+        // 2. Run Dijkstras Algorithm for backward search from every goal
+        while (!openList.empty()) {
+            shared_ptr<DomainAbstractedState> nextState = openList.top();
+            openList.pop();
 
+            newHeuristicValues.at(nextState->get_id()) = nextState->getGValue();
+            for (const auto& predecessor: abstraction->getPredecessors(nextState)) { // TODO change to predecessor function
+                // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
+                int currHVal = newHeuristicValues.at(predecessor->get_id());
+                if (currHVal == INF || predecessor->getGValue() < currHVal) {
+                    openList.push(predecessor);
+                }
+            }
+
+        }
         return newHeuristicValues;
     }
 }

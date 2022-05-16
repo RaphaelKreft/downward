@@ -1,4 +1,5 @@
 #include "domain_abstraction.h"
+#include "utils.h"
 
 #include <unordered_set>
 #include <utility>
@@ -10,10 +11,8 @@ namespace domain_abstractions {
 
     void DomainAbstraction::reload(VariableGroupVectors newAbstraction) {
         variableGroupVectors = std::move(newAbstraction);
-        //nValuesForHash.erase(nValuesForHash.begin(), nValuesForHash.end());
-        //nValuesForHash.reserve(variableGroupVectors.size());
-        //fill(nValuesForHash.begin(), nValuesForHash.end(), 0);
         computeNValues();
+        numAbstractStates = nValuesForHash.back();
     }
 
     VariableGroupVectors DomainAbstraction::getAbstractDomains() {
@@ -23,8 +22,8 @@ namespace domain_abstractions {
     long long DomainAbstraction::abstractStateLookupIndex(vector<int> &abstractStateRepresentation) {
         // maps All sates to a number in range {0,..., #Abstractstates-1}
         long long index = 0;
-        assert((*min_element(nValuesForHash.begin(), nValuesForHash.end())) >=0);
-        assert((*min_element(abstractStateRepresentation.begin(), abstractStateRepresentation.end())) >=0);
+        //assert((*min_element(nValuesForHash.begin(), nValuesForHash.end())) >=0);
+        //assert((*min_element(abstractStateRepresentation.begin(), abstractStateRepresentation.end())) >=0);
         // loop over all abstraction parts/domains
         for (int i = 0; i < (int) abstractStateRepresentation.size(); i++) {
             index += (nValuesForHash.at(i) * abstractStateRepresentation.at(i));
@@ -52,7 +51,6 @@ namespace domain_abstractions {
     int DomainAbstraction::getGroupForFact(FactPair fact) {
         // Returns group number inside abstract variable domain given a fact.
         int domainIndex = getDomainIndexOfVariableValue(fact.var, fact.value);
-        assert(domainIndex >= 0);
         return variableGroupVectors[fact.var][domainIndex];
     }
 
@@ -117,6 +115,7 @@ namespace domain_abstractions {
             nValuesForHash(variableGroupVectors.size(), 0){
         // precompute N-Values for perfect hash function that is needed for lookup
         computeNValues();
+        numAbstractStates = nValuesForHash.back();
     }
 
     void DomainAbstraction::computeNValues() {
@@ -142,10 +141,8 @@ namespace domain_abstractions {
             assert(newValue >= 0);
             nValuesForHash[i] = newValue;
         }
-        long long min = *min_element(nValuesForHash.begin(), nValuesForHash.end());
         //log << nValuesForHash << endl;
         assert(nValuesForHash.size() == variableGroupVectors.size());
-        assert((min) >=0);
     }
 
     bool DomainAbstraction::isGoal(const shared_ptr<DomainAbstractedState>& candidate) {
@@ -203,11 +200,17 @@ namespace domain_abstractions {
         for (const auto& pair: alreadyFound) {
             successorList.push_back(pair.second);
         }
-        // Sort by Operator cost (needed in case of early goal check in uniform cost search)
-        //sort(successorList.begin(), successorList.end(), DomainAbstractedState::getComparator());
-        //reverse(successorList.begin(), successorList.end());
 
         return successorList;
+    }
+
+    DomainAbstractedStates DomainAbstraction::getPredecessors(const shared_ptr<DomainAbstractedState>& state) {
+        /*
+         * Get the predecessors in Abstract State Space of the given Abstract State. Therefor the Abstract
+         * transition system must be calculated.
+         *
+         * */
+        return;
     }
 
     shared_ptr<DomainAbstractedState> DomainAbstraction::getInitialAbstractState() {
@@ -229,4 +232,49 @@ namespace domain_abstractions {
         return make_shared<DomainAbstractedState>(abstractStateGroups, abstractStateLookupIndex(abstractStateGroups));
     }
 
+    vector<shared_ptr<DomainAbstractedState>> DomainAbstraction::getAbstractGoalStates() {
+        /*
+         * Returns All possible Abstract goal states (fix goal-facts but vary group nums for remaining variables)
+         * */
+        vector<shared_ptr<DomainAbstractedState>> goalStates;
+        vector<vector<int>> consideredGroupsPerVar;
+        // loop through variables and check if goal group exists
+        for (int varIndex = 0; varIndex < (int) originalTask.get_initial_state().size(); varIndex++) {
+            // check if we have goal group for this variable
+            int lookupVal = transition_system->lookup_value(goal_facts, varIndex);
+            // if we found var we have a goal group
+            if (lookupVal != -1) {
+                int goalGroup = variableGroupVectors.at(varIndex).at(getDomainIndexOfVariableValue(varIndex, lookupVal));
+                consideredGroupsPerVar.emplace_back(vector<int>({goalGroup}));
+            } else {
+                // else all groups for this variable can be goal states!
+                int maxGroupNum = *max_element(variableGroupVectors.at(varIndex).begin(), variableGroupVectors.at(varIndex).end());
+                vector<int> tmpVec;
+                tmpVec.reserve(maxGroupNum + 1);
+                for (int i = 0; i <= maxGroupNum; i++) {
+                    tmpVec.push_back(i);
+                }
+
+            }
+        }
+        // Now construct the Goal states
+        for (auto& goalState: utils::groupCombinations(consideredGroupsPerVar)) {
+            shared_ptr<DomainAbstractedState> goalSearchNode = make_shared<DomainAbstractedState>(goalState,
+                                                                                                  abstractStateLookupIndex(goalState));
+            goalSearchNode->setGValue(0);
+            goalStates.push_back(goalSearchNode);
+        }
+        return goalStates;
+    }
+
+    long long DomainAbstraction::getNumAbstractStates() const {
+        return numAbstractStates;
+    }
+
+    void DomainAbstraction::generateAbstractTransitionSystem() {
+        /*
+         * Using the current Abstraction, the explicit abstract transition system is calculated
+         * */
+        abstract_transition_system(originalTask)
+    }
 }

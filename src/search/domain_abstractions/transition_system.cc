@@ -90,7 +90,7 @@ namespace domain_abstractions {
          * The facts that are needed for fulfillment == all preconditions
          * */
         GoalsProxy pr = originalTask.get_goals();
-        task_properties::dump_goals(pr);
+        //task_properties::dump_goals(pr);
         //log << "Collect missing facts and check isGoal" << endl;
         vector<FactPair> neededAssignments = task_properties::get_fact_pairs(pr);
         vector<FactPair> missedFacts;
