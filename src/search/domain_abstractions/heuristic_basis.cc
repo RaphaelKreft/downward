@@ -15,6 +15,7 @@ namespace domain_abstractions {
             domainSplitter(DomainSplitter(DomainSplitter::getEnumForString(splitMethodSuggestion), log)), timer(max_time) {
         // reserve memory padding, at this time timer is also already started!
         utils::reserve_extra_memory_padding(memory_padding_in_mb);
+        terminationFlag = false;
     }
 
     void HeuristicBasis::construct(TaskProxy originalTask) {
@@ -111,6 +112,11 @@ namespace domain_abstractions {
                 log << "CEGAR Termination Check: Reached memory limit." << endl;
             }
             return true;
+        } else if (terminationFlag) {
+            if (log.is_at_least_normal()) {
+                log << "CEGAR Termination Check: Abstraction getting too fine, hash-index had Overflow." << endl;
+            }
+            return true;
         }
         if (log.is_at_least_debug()) {
             log << "CEGAR Termination Check: Start another round of refinement! Time elapsed until now: " << timer.get_elapsed_time() << endl;
@@ -122,7 +128,7 @@ namespace domain_abstractions {
     shared_ptr <DomainAbstraction> HeuristicBasis::cegarTrivialAbstraction(TaskProxy originalTask) {
         /*
          * This Method takes the original task and Creates a Domain Abstraction Object where the domains are built on
-         * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0
+         * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0 Todo: use current split Method for goal facts?
          * */
         VariableGroupVectors domains;
         // loop over every variable and create domain split
@@ -247,9 +253,10 @@ namespace domain_abstractions {
             log << "CEGAR Refine: refine abstraction on basis of found flaw.." << endl;
         }
         VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, currentDomainAbstraction);
-        // Update DomainAbstractionObject
-        //log << "CEGAR Refine: reload abstraction instance using refinement result Abstraction: " << refinedAbstraction << endl;
-        currentDomainAbstraction->reload(refinedAbstraction);
+        // Update DomainAbstractionObject if internal validity constraints are fulfilled, else keep old and set termination
+        if (currentDomainAbstraction->reload(refinedAbstraction) == -1) {
+            terminationFlag = true;
+        }
     }
 
     int HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector& startStateValues, long long abstractStateIndex) {

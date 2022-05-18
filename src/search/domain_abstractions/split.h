@@ -33,7 +33,7 @@ namespace domain_abstractions {
                 return SplitMethod::EVENSPLIT;
             } else {
                 // by default always use best known option (Now: hardsplit)
-                return SplitMethod::HARDSPLIT;
+                return SplitMethod::EVENSPLIT;
             }
         }
 

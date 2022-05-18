@@ -31,6 +31,7 @@ namespace domain_abstractions {
         std::map<long long, int> heuristicValues;
         DomainSplitter domainSplitter;
         utils::CountdownTimer timer;
+        bool terminationFlag;
     public:
         explicit HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask, const std::string& splitMethod);
 

@@ -9,10 +9,27 @@ using namespace std;
 
 namespace domain_abstractions {
 
-    void DomainAbstraction::reload(VariableGroupVectors newAbstraction) {
+    int DomainAbstraction::reload(VariableGroupVectors newAbstraction) {
+        /*
+         * Calculate new nvalues for hash. Check if product of NValues will be an Overflow(which can lead to bad indexes).
+         * If this happens the reload is aborted and -1 is returned. Else the new values are set, the new abstraction is loaded
+         * and 0 is returned.
+         * */
+        vector<long long> newValues = computeNValues(newAbstraction);
+        // calculate max possible index
+        long long prod = 0;
+        for (int i = 0; i < (int) newAbstraction.size(); i++) {
+            int max_var_group_num = *max_element(newAbstraction.at(i).begin(), newAbstraction.at(i).end());
+            prod += (newValues.at(i)*max_var_group_num);
+        }
+        if (prod < 0) {
+            //keep old Abstraction
+            return -1;
+        }
         variableGroupVectors = std::move(newAbstraction);
-        computeNValues();
-        numAbstractStates = nValuesForHash.back();
+        nValuesForHash = newValues;
+        numAbstractStates = prod;
+        return 0;
     }
 
     VariableGroupVectors DomainAbstraction::getAbstractDomains() {
@@ -27,9 +44,6 @@ namespace domain_abstractions {
         // loop over all abstraction parts/domains
         for (int i = 0; i < (int) abstractStateRepresentation.size(); i++) {
             index += (nValuesForHash.at(i) * abstractStateRepresentation.at(i));
-        }
-        if (index < 0) {
-            log << index << "-- in abstr state: " << abstractStateRepresentation << endl;
         }
         assert(index >= 0);
         return index;
@@ -114,35 +128,32 @@ namespace domain_abstractions {
             variableGroupVectors(std::move(domainMap)),
             nValuesForHash(variableGroupVectors.size(), 0){
         // precompute N-Values for perfect hash function that is needed for lookup
-        computeNValues();
-        numAbstractStates = nValuesForHash.back();
+        reload(variableGroupVectors);
     }
 
-    void DomainAbstraction::computeNValues() {
+    vector<long long> DomainAbstraction::computeNValues(VariableGroupVectors newAbstraction) {
         /*
          * uses current AbstractDomains to calculate the N Values that are needed for the perfect hash function.
          * The perfect hash function maps Abstract states to an index which is used for lookup h values and to
          * store them when computed
          * */
         // loop over all variables (we always have all variables considered in comparison to this hash for PDB)
-        long long newValue = 1;
-        for (int i = 0; i < (int) variableGroupVectors.size(); i++) {
-            newValue = 1;
+        vector<long long> newNValuesForHash(newAbstraction.size(), 1);
+        for (int i = 0; i < (int) newAbstraction.size(); i++) {
             // loop over groups in abstract domain for current variable v_i
             for (int j = 0; j <= i - 1; j++) {
-                VariableGroupVector varGroupMapping = variableGroupVectors[j];
+                VariableGroupVector varGroupMapping = newAbstraction[j];
                 long long numGroups = (*max_element(varGroupMapping.begin(), varGroupMapping.end())) + 1;
                 assert(numGroups > 0);
-                newValue *= numGroups;
+                newNValuesForHash.at(i) *= numGroups;
             }
-            if (newValue < 0) {
-                log << "Current domain map(on err nvalue): " << variableGroupVectors << endl;
-            }
-            assert(newValue >= 0);
-            nValuesForHash[i] = newValue;
+            //if (newValue < 0) {
+            //    log << "Current domain map(on err nvalue): " << variableGroupVectors << endl;
+            //}
+            assert(newNValuesForHash.at(i) >= 0);
         }
-        //log << nValuesForHash << endl;
         assert(nValuesForHash.size() == variableGroupVectors.size());
+        return newNValuesForHash;
     }
 
     bool DomainAbstraction::isGoal(const shared_ptr<DomainAbstractedState>& candidate) {
@@ -207,10 +218,11 @@ namespace domain_abstractions {
     DomainAbstractedStates DomainAbstraction::getPredecessors(const shared_ptr<DomainAbstractedState>& state) {
         /*
          * Get the predecessors in Abstract State Space of the given Abstract State. Therefor the Abstract
-         * transition system must be calculated.
+         * transition system must be calculated. TODO: implement! (use abstract transition system)
          *
          * */
-        return;
+        vector<shared_ptr<DomainAbstractedState>> predecessors;
+        return predecessors;
     }
 
     shared_ptr<DomainAbstractedState> DomainAbstraction::getInitialAbstractState() {
@@ -258,7 +270,7 @@ namespace domain_abstractions {
             }
         }
         // Now construct the Goal states
-        for (auto& goalState: utils::groupCombinations(consideredGroupsPerVar)) {
+        for (auto& goalState: groupCombinations(consideredGroupsPerVar)) {
             shared_ptr<DomainAbstractedState> goalSearchNode = make_shared<DomainAbstractedState>(goalState,
                                                                                                   abstractStateLookupIndex(goalState));
             goalSearchNode->setGValue(0);
@@ -275,6 +287,5 @@ namespace domain_abstractions {
         /*
          * Using the current Abstraction, the explicit abstract transition system is calculated
          * */
-        abstract_transition_system(originalTask)
     }
 }

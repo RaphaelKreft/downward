@@ -30,7 +30,7 @@ namespace domain_abstractions {
     public:
         explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask, std::shared_ptr<TransitionSystem>);
 
-        void reload(VariableGroupVectors newAbstraction);
+        int reload(VariableGroupVectors newAbstraction);
 
         bool isGoal(const std::shared_ptr<DomainAbstractedState>& candidate);
 
@@ -62,7 +62,7 @@ namespace domain_abstractions {
 
         int getGroupForFact(FactPair fact);
 
-        void computeNValues();
+        std::vector<long long> computeNValues(VariableGroupVectors newAbstraction);
     };
 }
 
