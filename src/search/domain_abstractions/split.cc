@@ -15,14 +15,14 @@ namespace domain_abstractions {
     DomainSplitter::split(const shared_ptr<Flaw>& flaw, const shared_ptr<DomainAbstraction>& currentAbstraction) {
         // Select method on how to split and call Submethod. We return the new Abstraction
         if (currentMethod == SplitMethod::HARDSPLIT) {
-            log << "CEGAR -- Split: using HARD-split!" << endl;
+            //log << "CEGAR -- Split: using HARD-split!" << endl;
             return performHardSplit(flaw, currentAbstraction);
         } else if (currentMethod == SplitMethod::EVENSPLIT) {
-            log << "CEGAR -- Split: using EVEN-split!" << endl;
+            //log << "CEGAR -- Split: using EVEN-split!" << endl;
             return performEvenSplit(flaw, currentAbstraction);
         }else {
             // default fallback if unknown
-            log << "CEGAR -- Split: using fallback Method(Hard-Split) since given method not specified!" << endl;
+            //log << "CEGAR -- Split: using fallback Method(Hard-Split) since given method not specified!" << endl;
             return performHardSplit(flaw, currentAbstraction);
         }
     }

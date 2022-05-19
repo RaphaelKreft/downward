@@ -34,9 +34,10 @@ namespace domain_abstractions {
         if (log.is_at_least_normal()) {
             log << "Abstraction Construction finished!" << endl;
             log << "Final Abstraction: " << abstraction->getAbstractDomains() << endl;
+            log << "Now precompute heuristic values..." << endl;
         }
-        // PRECOMPUTE HEURISTIC VALUES TODO: For now disabled as we first test with on the fly calculation
-        //heuristicValues = calculateHeuristicValues();
+        // PRECOMPUTE HEURISTIC VALUES
+        heuristicValues = calculateHeuristicValues();
     }
 
     int HeuristicBasis::getValue(const State& state) {
@@ -48,14 +49,19 @@ namespace domain_abstractions {
         vector<int> correspondingAbstractState = abstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
         long long hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
-        if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
+        /*if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
             // if we have not calculated before, calculate and store
             int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
             heuristicValues.insert(pair<long long , int>(hMapIndex, h_val));
             return h_val;
         }
         //log << "Access already stored hvals" << endl;
-        return heuristicValues.at(hMapIndex);
+        return heuristicValues.at(hMapIndex); */
+        if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
+            return INF;
+        } else {
+            return heuristicValues.at(hMapIndex);
+        }
     }
 
     shared_ptr <DomainAbstraction> HeuristicBasis::createAbstraction(TaskProxy originalTask) {
@@ -298,31 +304,34 @@ namespace domain_abstractions {
         return INF;
     }
 
-    vector<int> HeuristicBasis::calculateHeuristicValues() {
+    map<long long, int> HeuristicBasis::calculateHeuristicValues() {
         /*
          * Calculates the heuristic values by using Dijkstra Algorithm to calculate Distances from goal states
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
-        vector<int> newHeuristicValues(abstraction->getNumAbstractStates(), INF);
+        map<long long, int> newHeuristicValues;
         // perform backward-Search from Goal using Dijkstras Algorithm
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         unordered_set<long long> closedList;
+        log << "Now generate Abstract Goal States.." << endl;
         // 1. Create All possible goal states (In Abstract State Space) and add them to openList
         for (const auto& goalState: abstraction->getAbstractGoalStates()) {
             openList.push(goalState);
         }
+        log << "Now generate operators for abstract space..." << endl;
+        abstraction->generateAbstractTransitionSystem();
         // 2. Run Dijkstras Algorithm for backward search from every goal
+        log << "Now run backward search..." << endl;
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
 
-            newHeuristicValues.at(nextState->get_id()) = nextState->getGValue();
-            for (const auto& predecessor: abstraction->getPredecessors(nextState)) { // TODO change to predecessor function
+            newHeuristicValues.insert(pair<long long, int>(nextState->get_id(), nextState->getGValue()));
+            for (const auto& predecessor: abstraction->getPredecessors(nextState)) {
                 // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
-                int currHVal = newHeuristicValues.at(predecessor->get_id());
-                if (currHVal == INF || predecessor->getGValue() < currHVal) {
+                if (newHeuristicValues.find(predecessor->get_id()) == newHeuristicValues.end() || predecessor->getGValue() < newHeuristicValues.at(predecessor->get_id())) {
                     openList.push(predecessor);
                 }
             }

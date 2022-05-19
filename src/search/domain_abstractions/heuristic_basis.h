@@ -42,7 +42,7 @@ namespace domain_abstractions {
     protected:
         std::shared_ptr<DomainAbstraction> createAbstraction(TaskProxy originalTask);
 
-        std::vector<int> calculateHeuristicValues();
+        std::map<long long, int> calculateHeuristicValues();
 
         bool cegarShouldTerminate();
 

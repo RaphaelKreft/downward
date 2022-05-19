@@ -15,25 +15,15 @@ namespace utils {
 }
 
 namespace domain_abstractions {
-/*
-  Rewire transitions after each split.
-*/
+
     class TransitionSystem {
         const std::vector<std::vector<FactPair>> preconditions_by_operator;
         const std::vector<std::vector<FactPair>> postconditions_by_operator;
         TaskProxy originalTask;
         utils::LogProxy &log;
 
-        // Transitions from and to other abstract states.
-        std::vector<Transitions> incoming;
-        std::vector<Transitions> outgoing;
-
     public:
         explicit TransitionSystem(const OperatorsProxy &ops, TaskProxy proxy, utils::LogProxy &log);
-
-        const std::vector<Transitions> &get_incoming_transitions() const;
-
-        const std::vector<Transitions> &get_outgoing_transitions() const;
 
         int get_precondition_value(int op_id, int var) const;
 
@@ -50,8 +40,6 @@ namespace domain_abstractions {
         std::vector<FactPair> isGoal(const std::vector<int>& currentState);
 
         std::vector<int> applyOperator(std::vector<int> currenValues, int op_id) const;
-
-        int get_num_states() const;
 
         int get_num_operators() const;
 

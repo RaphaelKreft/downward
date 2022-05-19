@@ -124,14 +124,6 @@ namespace domain_abstractions {
         return lookup_value(postconditions_by_operator[op_id], var);
     }
 
-    const vector<Transitions> &TransitionSystem::get_incoming_transitions() const {
-        return incoming;
-    }
-
-    const vector<Transitions> &TransitionSystem::get_outgoing_transitions() const {
-        return outgoing;
-    }
-
     vector<FactPair> TransitionSystem::get_precondition_assignments_for_operator(int operatorID) const {
         return preconditions_by_operator[operatorID];
     }
@@ -140,13 +132,7 @@ namespace domain_abstractions {
         return postconditions_by_operator[operatorID];
     }
 
-    int TransitionSystem::get_num_states() const {
-        assert(incoming.size() == outgoing.size());
-        return outgoing.size();
-    }
-
     int TransitionSystem::get_num_operators() const {
         return (int) preconditions_by_operator.size();
     }
-
 }
