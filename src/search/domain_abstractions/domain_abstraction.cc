@@ -1,5 +1,5 @@
 #include "domain_abstraction.h"
-//#include "da_utils.h"
+#include "da_utils.h"
 
 #include <utility>
 #include <cassert>
@@ -39,8 +39,6 @@ namespace domain_abstractions {
     long long DomainAbstraction::abstractStateLookupIndex(vector<int> &abstractStateRepresentation) {
         // maps All sates to a number in range {0,..., #Abstractstates-1}
         long long index = 0;
-        assert((*min_element(nValuesForHash.begin(), nValuesForHash.end())) >=0);
-        assert((*min_element(abstractStateRepresentation.begin(), abstractStateRepresentation.end())) >=0);
         // loop over all abstraction parts/domains
         for (int i = 0; i < (int) abstractStateRepresentation.size(); i++) {
             index += (nValuesForHash.at(i) * abstractStateRepresentation.at(i));
@@ -155,7 +153,6 @@ namespace domain_abstractions {
         /*
          * Check if the abstract state id is present in goalAbstractStates List -> if yes it is a goal state
          * */
-        //log << "Is " << candidate->getGroupsAssignment() << " goal?" << endl;
         vector<int> candidateGroupAssignments = candidate->getGroupsAssignment();
         return groupAssignmentFulfillsFacts(candidateGroupAssignments, goal_facts);
     }
@@ -210,6 +207,13 @@ namespace domain_abstractions {
         return successorList;
     }
 
+    /*
+     * TODO: Ideas to safe Memory/Time
+     *  1. Make priority queue just with index and costs and store state object elewhere/create otf
+     *  2. Use better priority queues?
+     *  3. Better Algorithms for successor/applicable etc?
+     * */
+
     DomainAbstractedStates DomainAbstraction::getPredecessors(const shared_ptr<DomainAbstractedState>& state) {
         /*
          * Get the predecessors in Abstract State Space of the given Abstract State. Therefor the Abstract
@@ -233,7 +237,6 @@ namespace domain_abstractions {
                         int maxGroupNum = *max_element(variableGroupVectors.at(varIndex).begin(),
                                                        variableGroupVectors.at(varIndex).end());
                         vector<int> tmpVec;
-                        tmpVec.reserve(maxGroupNum + 1);
                         for (int i = 0; i <= maxGroupNum; i++) {
                             consideredGroupsPerVar.at(varIndex).push_back(i);
                         }
@@ -320,9 +323,6 @@ namespace domain_abstractions {
         return goalStates;
     }
 
-    long long DomainAbstraction::getNumAbstractStates() const {
-        return numAbstractStates;
-    }
 
 
     void DomainAbstraction::generateAbstractTransitionSystem() {
