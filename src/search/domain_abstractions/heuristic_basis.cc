@@ -7,6 +7,7 @@ using namespace std;
 
 namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
+    static const bool OTF = false;
 
     HeuristicBasis::HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask,
                                    const string& splitMethodSuggestion) :
@@ -37,7 +38,9 @@ namespace domain_abstractions {
             log << "Now precompute heuristic values..." << endl;
         }
         // PRECOMPUTE HEURISTIC VALUES
-        heuristicValues = calculateHeuristicValues();
+        if (!OTF){
+            calculateHeuristicValues();
+        }
     }
 
     int HeuristicBasis::getValue(const State& state) {
@@ -49,16 +52,15 @@ namespace domain_abstractions {
         vector<int> correspondingAbstractState = abstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
         long long hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
-        /*if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
-            // if we have not calculated before, calculate and store
-            int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
-            heuristicValues.insert(pair<long long , int>(hMapIndex, h_val));
-            return h_val;
-        }
-        //log << "Access already stored hvals" << endl;
-        return heuristicValues.at(hMapIndex); */
         if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
-            return INF;
+            // if we have not calculated before, calculate and store
+            if (OTF) {
+                int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
+                heuristicValues.insert(pair<long long , int>(hMapIndex, h_val));
+                return h_val;
+            } else {
+                return INF;
+            }
         } else {
             return heuristicValues.at(hMapIndex);
         }
@@ -310,7 +312,7 @@ namespace domain_abstractions {
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
-        map<long long, int> newHeuristicValues;
+        
         // perform backward-Search from Goal using Dijkstras Algorithm
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
@@ -328,15 +330,15 @@ namespace domain_abstractions {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
 
-            newHeuristicValues.insert(pair<long long, int>(nextState->get_id(), nextState->getGValue()));
+            heuristicValues.insert(pair<long long, int>(nextState->get_id(), nextState->getGValue()));
             for (const auto& predecessor: abstraction->getPredecessors(nextState)) {
                 // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
-                if (newHeuristicValues.find(predecessor->get_id()) == newHeuristicValues.end() || predecessor->getGValue() < newHeuristicValues.at(predecessor->get_id())) {
+                if (heuristicValues.find(predecessor->get_id()) == heuristicValues.end() || predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
                     openList.push(predecessor);
                 }
             }
 
         }
-        return newHeuristicValues;
+        return heuristicValues;
     }
 }
