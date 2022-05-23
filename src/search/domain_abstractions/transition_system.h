@@ -21,6 +21,8 @@ namespace domain_abstractions {
         const std::vector<std::vector<FactPair>> postconditions_by_operator;
         TaskProxy originalTask;
         utils::LogProxy &log;
+        std::vector<int> concreteInitialState;
+        std::vector<FactPair> goalFacts;
 
     public:
         explicit TransitionSystem(const OperatorsProxy &ops, TaskProxy proxy, utils::LogProxy &log);
@@ -42,6 +44,10 @@ namespace domain_abstractions {
         std::vector<int> applyOperator(std::vector<int> currenValues, int op_id) const;
 
         int get_num_operators() const;
+
+        std::vector<int> getInitialState();
+
+        std::vector<FactPair> getGoalFacts();
 
         static int lookup_value(const std::vector<FactPair> &facts, int var) {
             /*

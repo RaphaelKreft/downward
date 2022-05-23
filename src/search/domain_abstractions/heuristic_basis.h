@@ -50,7 +50,7 @@ namespace domain_abstractions {
 
         void cegarRefine(const std::shared_ptr<Flaw>& flaw, const std::shared_ptr<DomainAbstraction>& currentDomainAbstraction);
 
-        std::shared_ptr<Flaw> cegarFindFlaw(const std::shared_ptr<Trace>& trace, TaskProxy originalTask);
+        std::shared_ptr<Flaw> cegarFindFlaw(const std::shared_ptr<Trace>& trace);
 
         std::shared_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
 

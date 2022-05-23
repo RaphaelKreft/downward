@@ -8,7 +8,8 @@ using namespace std;
 
 namespace domain_abstractions {
 
-    DomainSplitter::DomainSplitter(SplitMethod method, utils::LogProxy &log) : currentMethod(method), log(log) {
+    DomainSplitter::DomainSplitter(const string& method, utils::LogProxy &log) : currentMethod(getEnumForString(method)), log(log) {
+        log << "Set SPLIT METHOD: " << method << endl;
     }
 
     VariableGroupVectors

@@ -13,7 +13,7 @@ namespace domain_abstractions {
                                    const string& splitMethodSuggestion) :
             max_time(max_time), log(log),
             transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
-            domainSplitter(DomainSplitter(DomainSplitter::getEnumForString(splitMethodSuggestion), log)), timer(max_time) {
+            domainSplitter(DomainSplitter(splitMethodSuggestion, log)), timer(max_time) {
         // reserve memory padding, at this time timer is also already started!
         utils::reserve_extra_memory_padding(memory_padding_in_mb);
         terminationFlag = false;
@@ -93,7 +93,7 @@ namespace domain_abstractions {
                 }
                 break;
             }
-            shared_ptr<Flaw> f = cegarFindFlaw(t, originalTask);
+            shared_ptr<Flaw> f = cegarFindFlaw(t);
             if (!f) {
                 if (log.is_at_least_normal()) {
                     log << "CEGAR round " << rounds << ": Found concrete solution during refinement!!!" << endl;
@@ -140,31 +140,20 @@ namespace domain_abstractions {
          * This Method takes the original task and Creates a Domain Abstraction Object where the domains are built on
          * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0 Todo: use current split Method for goal facts?
          * */
-        VariableGroupVectors domains;
-        // loop over every variable and create domain split
-        for (VariableProxy var: originalTask.get_variables()) {
-            VariableGroupVector varVec;
-            varVec.clear();
-            // loop over variable values and check for every one of it if it is contained in goal state
-            for (int i = 0; i < var.get_domain_size(); i++) {
-                FactProxy fact = var.get_fact(i);
-                bool isGoal = false;
-                // Check whether variable value is in goal facts
-                for (FactProxy goalFact: originalTask.get_goals()) {
-                    if (goalFact == fact) {
-                        varVec.push_back(1);
-                        isGoal = true;
-                        break;
-                    }
-                }
-                if (!isGoal) {
-                    varVec.push_back(0);
-                }
-            }
-            // Add domain group mapping for single variable to list
-            domains.push_back(varVec);
+        // create null vectors for all domains
+        VariableGroupVectors nullInit;
+        VariablesProxy vars = originalTask.get_variables();
+        for (int varIndex = 0; varIndex < (int) vars.size(); varIndex++) {
+            nullInit.push_back(vector<int>(vars[varIndex].get_domain_size(), 0));
         }
-        return make_shared<DomainAbstraction>(domains, log, originalTask, transitionSystem);
+        // make artificial Flaw out of goal facts
+        shared_ptr<Flaw> tmpFlaw = make_shared<Flaw>(vector<int>(), make_shared<vector<FactPair>>(transitionSystem->getGoalFacts()));
+        // create abstraction Instance
+        shared_ptr<DomainAbstraction> initAbstraction = make_shared<DomainAbstraction>(nullInit, log, originalTask, transitionSystem);
+        // Split and reload instance
+        VariableGroupVectors domains = domainSplitter.split(tmpFlaw, initAbstraction);
+        initAbstraction->reload(domains);
+        return initAbstraction;
     }
 
     shared_ptr <Trace> HeuristicBasis::cegarFindOptimalTrace(const shared_ptr <DomainAbstraction>& currentAbstraction) {
@@ -210,7 +199,7 @@ namespace domain_abstractions {
         return nullptr;
     }
 
-    shared_ptr <Flaw> HeuristicBasis::cegarFindFlaw(const shared_ptr <Trace>& trace, TaskProxy originalTask) {
+    shared_ptr <Flaw> HeuristicBasis::cegarFindFlaw(const shared_ptr <Trace>& trace) {
         /*
          * Tries to apply trace in original task and returns a flaw if we cannot reach goal via this trace.
          * -> Precondition flaw and goal flaws
@@ -221,9 +210,8 @@ namespace domain_abstractions {
                 log << ' ' << it;
             log << endl;
         }
-        vector<int> currState = originalTask.get_initial_state().get_unpacked_values();
+        vector<int> currState = transitionSystem->getInitialState();
         // follow trace
-        //log << "Check if precondition flaw..." << endl;
         while (!(trace->empty())) {
             // get next transition candidate
             Transition nextTransition = trace->front();

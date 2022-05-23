@@ -20,7 +20,7 @@ namespace domain_abstractions {
         utils::LogProxy &log;
 
     public:
-        DomainSplitter(SplitMethod method, utils::LogProxy &log);
+        DomainSplitter(const std::string& method, utils::LogProxy &log);
 
         VariableGroupVectors split(const std::shared_ptr<Flaw>& flaw,
                                    const std::shared_ptr<DomainAbstraction>& currentAbstraction);

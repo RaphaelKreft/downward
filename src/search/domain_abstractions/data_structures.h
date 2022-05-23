@@ -21,7 +21,6 @@ namespace domain_abstractions {
 
     const int INF = std::numeric_limits<int>::max();
 
-    using Transitions = std::vector<Transition>;
     using Trace = std::deque<Transition>;
     //using DomainAbstractedStates = std::vector<DomainAbstractedState *>;
     // same as in domain_abstracted_task.cc
@@ -54,7 +53,6 @@ namespace domain_abstractions {
 
         Flaw(const std::vector<int>& flawBaseState, const std::shared_ptr<std::vector<FactPair>>& missedF) {
             assert(!missedF->empty());
-            assert(!flawBaseState.empty());
             stateWhereFlawHappens = std::make_shared<std::vector<int>>(flawBaseState);
             missedFacts = missedF;
         }

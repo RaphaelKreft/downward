@@ -65,7 +65,8 @@ namespace domain_abstractions {
     TransitionSystem::TransitionSystem(const OperatorsProxy& ops, TaskProxy proxy, utils::LogProxy &log)
             : preconditions_by_operator(get_preconditions_by_operator(ops)),
               postconditions_by_operator(get_postconditions_by_operator(ops)),
-              originalTask(proxy), log(log) {
+              originalTask(proxy), log(log), concreteInitialState(originalTask.get_initial_state().get_unpacked_values()),
+              goalFacts(task_properties::get_fact_pairs(originalTask.get_goals())){
     }
 
     vector<FactPair> TransitionSystem::transitionApplicable(vector<int> currentState, Transition toApply) const {
@@ -89,13 +90,9 @@ namespace domain_abstractions {
          * Checks whether a Transition is applicable in the original Task! If Yes, an empty vector is returned, if not
          * The facts that are needed for fulfillment == all preconditions
          * */
-        GoalsProxy pr = originalTask.get_goals();
-        //task_properties::dump_goals(pr);
-        //log << "Collect missing facts and check isGoal" << endl;
-        vector<FactPair> neededAssignments = task_properties::get_fact_pairs(pr);
         vector<FactPair> missedFacts;
         //log << "loop over needed assignments" << endl;
-        for (FactPair &pair: neededAssignments) {
+        for (FactPair &pair: goalFacts) {
             if (pair.value != currentState.at(pair.var)) {
                 missedFacts.push_back(pair);
             }
@@ -134,5 +131,13 @@ namespace domain_abstractions {
 
     int TransitionSystem::get_num_operators() const {
         return (int) preconditions_by_operator.size();
+    }
+
+    std::vector<int> TransitionSystem::getInitialState() {
+        return concreteInitialState;
+    }
+
+    std::vector<FactPair> TransitionSystem::getGoalFacts() {
+        return goalFacts;
     }
 }
