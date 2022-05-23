@@ -200,13 +200,6 @@ namespace domain_abstractions {
         return successorList;
     }
 
-    /*
-     * TODO: Ideas to safe Memory/Time
-     *  1. Make priority queue just with index and costs and store state object elewhere/create otf
-     *  2. Use better priority queues?
-     *  3. Better Algorithms for successor/applicable etc?
-     * */
-
     DomainAbstractedStates DomainAbstraction::getPredecessors(const shared_ptr <DomainAbstractedState> &state) {
         /*
          * Get the predecessors in Abstract State Space of the given Abstract State. Therefor the Abstract

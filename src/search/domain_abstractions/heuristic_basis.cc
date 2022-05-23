@@ -7,7 +7,7 @@ using namespace std;
 
 namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
-    static const bool OTF = true;
+    static const bool OTF = false;
 
     HeuristicBasis::HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask,
                                    const string &splitMethodSuggestion) :
@@ -39,7 +39,7 @@ namespace domain_abstractions {
         }
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF) {
-            heuristicValues = calculateHeuristicValues();
+            calculateHeuristicValues();
         }
     }
 
@@ -300,7 +300,7 @@ namespace domain_abstractions {
         return INF;
     }
 
-    map<long long, int> HeuristicBasis::calculateHeuristicValues() {
+    void HeuristicBasis::calculateHeuristicValues() {
         /*
          * Calculates the heuristic values by using Dijkstra Algorithm to calculate Distances from goal states
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
@@ -333,6 +333,5 @@ namespace domain_abstractions {
             }
 
         }
-        return heuristicValues;
     }
 }
