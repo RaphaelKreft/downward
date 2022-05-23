@@ -7,7 +7,7 @@ using namespace std;
 
 namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
-    static const bool OTF = false;
+    static const bool OTF = true;
 
     HeuristicBasis::HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask,
                                    const string& splitMethodSuggestion) :
@@ -39,7 +39,9 @@ namespace domain_abstractions {
         }
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF){
-            calculateHeuristicValues();
+            heuristicValues = calculateHeuristicValues();
+        } else {
+            heuristicValues = vector<int>(abstraction->getNumberOfAbstractStates(), INF);
         }
     }
 
@@ -52,11 +54,11 @@ namespace domain_abstractions {
         vector<int> correspondingAbstractState = abstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
         long long hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
-        if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
+        if (heuristicValues.at(hMapIndex) == INF) {
             // if we have not calculated before, calculate and store
             if (OTF) {
                 int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
-                heuristicValues.insert(pair<long long , int>(hMapIndex, h_val));
+                heuristicValues.at(hMapIndex) = h_val;
                 return h_val;
             } else {
                 return INF;
@@ -306,17 +308,17 @@ namespace domain_abstractions {
         return INF;
     }
 
-    map<long long, int> HeuristicBasis::calculateHeuristicValues() {
+    vector<int> HeuristicBasis::calculateHeuristicValues() {
         /*
          * Calculates the heuristic values by using Dijkstra Algorithm to calculate Distances from goal states
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
-        
+        vector<int> newHeuristicValues(abstraction->getNumberOfAbstractStates(), INF);
+        assert((int) newHeuristicValues.size() == abstraction->getNumberOfAbstractStates());
         // perform backward-Search from Goal using Dijkstras Algorithm
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
-        unordered_set<long long> closedList;
         log << "Now generate Abstract Goal States.." << endl;
         // 1. Create All possible goal states (In Abstract State Space) and add them to openList
         for (const auto& goalState: abstraction->getAbstractGoalStates()) {
@@ -330,15 +332,19 @@ namespace domain_abstractions {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
 
-            heuristicValues.insert(pair<long long, int>(nextState->get_id(), nextState->getGValue()));
+            if (newHeuristicValues.at(nextState->get_id()) < nextState->getGValue()) {
+                continue;
+            }
             for (const auto& predecessor: abstraction->getPredecessors(nextState)) {
                 // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
-                if (heuristicValues.find(predecessor->get_id()) == heuristicValues.end() || predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
+                assert(predecessor->get_id() < (int) newHeuristicValues.size());
+                if (predecessor->getGValue() < newHeuristicValues.at(predecessor->get_id())) {
+                    newHeuristicValues.at(predecessor->get_id()) = predecessor->getGValue();
                     openList.push(predecessor);
                 }
             }
 
         }
-        return heuristicValues;
+        return newHeuristicValues;
     }
 }

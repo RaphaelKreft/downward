@@ -28,7 +28,7 @@ namespace domain_abstractions {
 
         std::shared_ptr<TransitionSystem> transitionSystem;
         std::shared_ptr<DomainAbstraction> abstraction;
-        std::map<long long, int> heuristicValues;
+        std::vector<int> heuristicValues;
         DomainSplitter domainSplitter;
         utils::CountdownTimer timer;
         bool terminationFlag;
@@ -42,7 +42,7 @@ namespace domain_abstractions {
     protected:
         std::shared_ptr<DomainAbstraction> createAbstraction(TaskProxy originalTask);
 
-        std::map<long long, int> calculateHeuristicValues();
+        std::vector<int> calculateHeuristicValues();
 
         bool cegarShouldTerminate();
 

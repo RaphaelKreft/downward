@@ -24,17 +24,17 @@ namespace domain_abstractions {
         vector<long long> newValues = computeNValues(newAbstraction, newDomainSizes);
 
         // calculate max possible index
-        long long prod = 0;
+        long long maxIndex = 0;
         for (int i = 0; i < (int) newAbstraction.size(); i++) {
-            prod += (newValues.at(i)*(newDomainSizes.at(i) - 1));
+            maxIndex += (newValues.at(i) * (newDomainSizes.at(i) - 1));
         }
-        if (prod < 0) {
+        if (maxIndex < 0) {
             //keep old Abstraction
             return -1;
         }
         variableGroupVectors = std::move(newAbstraction);
         nValuesForHash = newValues;
-        numAbstractStates = prod;
+        numAbstractStates = maxIndex + 1;
         domainSizes = newDomainSizes;
 
         //generateAbstractTransitionSystem();
@@ -353,5 +353,9 @@ namespace domain_abstractions {
 
             abstractOperatorPostconditions.push_back(tmpVecPost);
         }
+    }
+
+    long long DomainAbstraction::getNumberOfAbstractStates() const {
+        return numAbstractStates;
     }
 }

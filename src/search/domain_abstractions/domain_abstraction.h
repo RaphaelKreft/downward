@@ -65,6 +65,8 @@ namespace domain_abstractions {
 
         void generateAbstractTransitionSystem();
 
+        long long getNumberOfAbstractStates() const;
+
     private:
 
         std::vector<long long> computeNValues(VariableGroupVectors newAbstraction, std::vector<int>& newDomainSizes);
