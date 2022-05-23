@@ -37,6 +37,7 @@ namespace domain_abstractions {
         numAbstractStates = maxIndex + 1;
         domainSizes = newDomainSizes;
 
+        preCalculateVariableGroupFacts();
         //generateAbstractTransitionSystem();
         return 0;
     }
@@ -73,17 +74,6 @@ namespace domain_abstractions {
         return variableGroupVectors[fact.var][fact.value];
     }
 
-    int DomainAbstraction::getDomainIndexOfVariableValue(int variable, int value) {
-        // Get index of a value inside variable domain -> ex we can use it to access abstract mapping.
-        VariableProxy variableProxy = originalTask.get_variables()[variable];
-        for (int domainIndex = 0; domainIndex < variableProxy.get_domain_size(); domainIndex++) {
-            if (variableProxy.get_fact(domainIndex).get_value() == value) {
-                return domainIndex;
-            }
-        }
-        return -1; // NOT FOUND
-    }
-
     vector<FactPair> DomainAbstraction::getVariableGroupFacts(int varIndex, int groupNumber) {
         /*
          * Function that returns the facts(variable assignments) for a specific variable and group.
@@ -101,6 +91,14 @@ namespace domain_abstractions {
         return myFacts;
     }
 
+    vector<FactPair> DomainAbstraction::getPrecalcedVariableGroupFacts(int varIndex, int groupNumber) {
+        /*
+         * Function that returns the facts(variable assignments) for a specific variable and group.
+         * */
+        // get Variable proxy for specific variable
+        return variableGroupFacts[varIndex][groupNumber];
+    }
+
     bool DomainAbstraction::groupAssignmentFulfillsFacts(vector<int> abstractCandidate,
                                                          const vector<FactPair> &factsToFulfill) {
         /*
@@ -110,7 +108,7 @@ namespace domain_abstractions {
         for (auto wantedFact: factsToFulfill) {
             // get group number of abstract state
             int group = abstractCandidate.at(wantedFact.var);
-            vector<FactPair> groupFacts = getVariableGroupFacts(wantedFact.var, group);
+            vector<FactPair> groupFacts = getPrecalcedVariableGroupFacts(wantedFact.var, group);
             if (find(groupFacts.begin(), groupFacts.end(), wantedFact) == groupFacts.end()) {
                 // if I cannot find the wanted fact in my group return false
                 return false;
@@ -361,5 +359,22 @@ namespace domain_abstractions {
 
     int DomainAbstraction::getDomainSize(int var) {
         return domainSizes[var];
+    }
+
+    void DomainAbstraction::preCalculateVariableGroupFacts() {
+        /*
+         * Is called every time reload() is executed. It calculates the facts for every group of every variable.
+         * */
+        int numVars = (int)originalTask.get_variables().size();
+        variableGroupFacts.clear();
+        // loop over variables
+        for (int varIndex = 0; varIndex < numVars; varIndex++) {
+            variableGroupFacts.push_back(vector<vector<FactPair>>());
+            int domainSize = domainSizes.at(varIndex);
+            for (int groupIndex = 0; groupIndex < domainSize; groupIndex ++) {
+                variableGroupFacts[varIndex].push_back(getVariableGroupFacts(varIndex, groupIndex));
+            }
+        }
+        assert((int) variableGroupFacts.size() == numVars);
     }
 }

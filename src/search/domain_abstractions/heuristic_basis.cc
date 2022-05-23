@@ -140,7 +140,7 @@ namespace domain_abstractions {
     shared_ptr <DomainAbstraction> HeuristicBasis::cegarTrivialAbstraction(TaskProxy originalTask) {
         /*
          * This Method takes the original task and Creates a Domain Abstraction Object where the domains are built on
-         * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0 Todo: use current split Method for goal facts?
+         * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0
          * */
         // create null vectors for all domains
         VariableGroupVectors nullInit;

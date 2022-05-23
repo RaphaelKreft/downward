@@ -99,7 +99,7 @@ namespace domain_abstractions {
 
             // change half of old group (-1)
             int oldGroupNr = oldVariableAbstractDomain.at(factPair.value);
-            vector<FactPair> oldGroupFacts = currentAbstraction->getVariableGroupFacts(factPair.var, oldGroupNr);
+            vector<FactPair> oldGroupFacts = currentAbstraction->getPrecalcedVariableGroupFacts(factPair.var, oldGroupNr);
             int oldGroupSize = (int) oldGroupFacts.size();
             int changed = 1;
             int toChange = oldGroupSize / 2;

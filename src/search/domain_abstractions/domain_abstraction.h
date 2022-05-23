@@ -29,6 +29,9 @@ namespace domain_abstractions {
         std::vector<int> domainSizes; // store num groups/domain size per variable. Used to get rid of max_elementops
         long long numAbstractStates{0};
 
+        // precalced for every reload for performance reasons
+        std::vector<std::vector<std::vector<FactPair>>> variableGroupFacts; // for each variable, for each group the vector of FactPairs is stored
+
         // Operators based on abstraction(group var)
         std::vector<std::vector<std::pair<int, int>>> abstractOperatorPreconditions;
         std::vector<std::vector<std::pair<int, int>>> abstractOperatorPostconditions;
@@ -53,8 +56,6 @@ namespace domain_abstractions {
 
         VariableGroupVectors getAbstractDomains();
 
-        int getDomainIndexOfVariableValue(int variable, int value);
-
         std::vector<FactPair> getVariableGroupFacts(int varIndex, int groupNumber);
 
         std::vector<std::shared_ptr<DomainAbstractedState>> getAbstractGoalStates();
@@ -69,7 +70,11 @@ namespace domain_abstractions {
 
         int getDomainSize(int var);
 
+        std::vector<FactPair> getPrecalcedVariableGroupFacts(int varIndex, int groupNumber);
+
     private:
+
+        void preCalculateVariableGroupFacts();
 
         std::vector<long long> computeNValues(VariableGroupVectors newAbstraction, std::vector<int>& newDomainSizes);
 
