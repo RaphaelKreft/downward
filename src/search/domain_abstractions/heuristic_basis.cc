@@ -39,10 +39,7 @@ namespace domain_abstractions {
         }
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF){
-            log << "Now precompute heuristic values..." << endl;
-            heuristicValues = calculateHeuristicValues();
-        } else {
-            heuristicValues = vector<int>(abstraction->getNumberOfAbstractStates(), INF);
+            calculateHeuristicValues();
         }
     }
 
@@ -55,11 +52,11 @@ namespace domain_abstractions {
         vector<int> correspondingAbstractState = abstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
         long long hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
-        if (heuristicValues.at(hMapIndex) == INF) {
+        if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
             // if we have not calculated before, calculate and store
             if (OTF) {
                 int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
-                heuristicValues.at(hMapIndex) = h_val;
+                heuristicValues.insert(pair<long long , int>(hMapIndex, h_val));
                 return h_val;
             } else {
                 return INF;
@@ -298,14 +295,13 @@ namespace domain_abstractions {
         return INF;
     }
 
-    vector<int> HeuristicBasis::calculateHeuristicValues() {
+    map<long long, int> HeuristicBasis::calculateHeuristicValues() {
         /*
          * Calculates the heuristic values by using Dijkstra Algorithm to calculate Distances from goal states
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
-        vector<int> newHeuristicValues(abstraction->getNumberOfAbstractStates(), INF);
-        assert((int) newHeuristicValues.size() == abstraction->getNumberOfAbstractStates());
+
         // perform backward-Search from Goal using Dijkstras Algorithm
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
@@ -322,19 +318,15 @@ namespace domain_abstractions {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
 
-            if (newHeuristicValues.at(nextState->get_id()) < nextState->getGValue()) {
-                continue;
-            }
+            heuristicValues.insert(pair<long long, int>(nextState->get_id(), nextState->getGValue()));
             for (const auto& predecessor: abstraction->getPredecessors(nextState)) {
                 // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
-                assert(predecessor->get_id() < (int) newHeuristicValues.size());
-                if (predecessor->getGValue() < newHeuristicValues.at(predecessor->get_id())) {
-                    newHeuristicValues.at(predecessor->get_id()) = predecessor->getGValue();
+                if (heuristicValues.find(predecessor->get_id()) == heuristicValues.end() || predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
                     openList.push(predecessor);
                 }
             }
 
         }
-        return newHeuristicValues;
+        return heuristicValues;
     }
 }
