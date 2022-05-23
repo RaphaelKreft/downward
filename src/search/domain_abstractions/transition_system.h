@@ -54,7 +54,7 @@ namespace domain_abstractions {
              * Given a vector of FactPairs and a variable number this method returns the value of this variable
              * in the vector or -1 if var not found. Used for ex:
              * */
-            assert(is_sorted(facts.begin(), facts.end()));
+            //assert(is_sorted(facts.begin(), facts.end()));
             for (const FactPair &fact: facts) {
                 if (fact.var == var) {
                     return fact.value;

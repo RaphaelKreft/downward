@@ -358,4 +358,8 @@ namespace domain_abstractions {
     long long DomainAbstraction::getNumberOfAbstractStates() const {
         return numAbstractStates;
     }
+
+    int DomainAbstraction::getDomainSize(int var) {
+        return domainSizes[var];
+    }
 }

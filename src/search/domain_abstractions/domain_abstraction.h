@@ -67,6 +67,8 @@ namespace domain_abstractions {
 
         long long getNumberOfAbstractStates() const;
 
+        int getDomainSize(int var);
+
     private:
 
         std::vector<long long> computeNValues(VariableGroupVectors newAbstraction, std::vector<int>& newDomainSizes);

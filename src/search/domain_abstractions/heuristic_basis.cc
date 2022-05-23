@@ -35,10 +35,11 @@ namespace domain_abstractions {
         if (log.is_at_least_normal()) {
             log << "Abstraction Construction finished!" << endl;
             log << "Final Abstraction: " << abstraction->getAbstractDomains() << endl;
-            log << "Now precompute heuristic values..." << endl;
+            log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;
         }
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF){
+            log << "Now precompute heuristic values..." << endl;
             heuristicValues = calculateHeuristicValues();
         } else {
             heuristicValues = vector<int>(abstraction->getNumberOfAbstractStates(), INF);
@@ -78,6 +79,7 @@ namespace domain_abstractions {
             log << "CEGAR: create initial trivial abstraction.." << endl;
         }
         shared_ptr<DomainAbstraction> currentAbstraction = cegarTrivialAbstraction(originalTask);
+        log << "Initial Abstraction: " << currentAbstraction->getAbstractDomains() << endl;
         if (log.is_at_least_normal()) {
             log << "CEGAR: initial abstraction created, now run refinement loop..." << endl;
         }
