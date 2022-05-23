@@ -17,7 +17,8 @@
 using namespace std;
 
 namespace domain_abstractions {
-    shared_ptr<HeuristicBasis> DomainAbstractionHeuristic::generate_heuristic(const Options &opts, utils::LogProxy &log) {
+    shared_ptr <HeuristicBasis>
+    DomainAbstractionHeuristic::generate_heuristic(const Options &opts, utils::LogProxy &log) {
         if (log.is_at_least_normal()) {
             log << "Initializing Domain Abstraction heuristic using CEGAR-Like Algorithm..." << endl;
             task_properties::dump_goals(task_proxy.get_goals());
@@ -52,7 +53,7 @@ namespace domain_abstractions {
         return value;
     }
 
-    static shared_ptr<Heuristic> _parse(OptionParser &parser) {
+    static shared_ptr <Heuristic> _parse(OptionParser &parser) {
         parser.document_synopsis("Domain Abstraction Heuristic",
                                  "Constructs an Abstraction heuristic using CEGAR-Like Algorithm based"
                                  "on Domain Abstractions");

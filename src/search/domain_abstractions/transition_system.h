@@ -39,7 +39,7 @@ namespace domain_abstractions {
         // = Facts that must have been true additionally for the wanted outcome!
         std::vector<FactPair> transitionApplicable(std::vector<int> currentState, Transition toApply) const;
 
-        std::vector<FactPair> isGoal(const std::vector<int>& currentState);
+        std::vector<FactPair> isGoal(const std::vector<int> &currentState);
 
         std::vector<int> applyOperator(std::vector<int> currenValues, int op_id) const;
 

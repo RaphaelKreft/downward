@@ -51,7 +51,7 @@ namespace domain_abstractions {
         std::shared_ptr<std::vector<int>> stateWhereFlawHappens; // from that we can later derive the abstract state
         std::shared_ptr<std::vector<FactPair>> missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
 
-        Flaw(const std::vector<int>& flawBaseState, const std::shared_ptr<std::vector<FactPair>>& missedF) {
+        Flaw(const std::vector<int> &flawBaseState, const std::shared_ptr<std::vector<FactPair>> &missedF) {
             assert(!missedF->empty());
             stateWhereFlawHappens = std::make_shared<std::vector<int>>(flawBaseState);
             missedFacts = missedF;
@@ -59,7 +59,7 @@ namespace domain_abstractions {
 
         std::vector<int> getStateWhereFlawHappensCopy() {
             std::vector<int> copyVec;
-            for (int & i : *stateWhereFlawHappens) {
+            for (int &i: *stateWhereFlawHappens) {
                 copyVec.push_back(i);
             }
             return copyVec;

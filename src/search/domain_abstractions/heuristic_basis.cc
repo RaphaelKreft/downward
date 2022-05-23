@@ -10,7 +10,7 @@ namespace domain_abstractions {
     static const bool OTF = true;
 
     HeuristicBasis::HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask,
-                                   const string& splitMethodSuggestion) :
+                                   const string &splitMethodSuggestion) :
             max_time(max_time), log(log),
             transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
             domainSplitter(DomainSplitter(splitMethodSuggestion, log)), timer(max_time) {
@@ -38,12 +38,12 @@ namespace domain_abstractions {
             log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;
         }
         // PRECOMPUTE HEURISTIC VALUES
-        if (!OTF){
-            calculateHeuristicValues();
+        if (!OTF) {
+            heuristicValues = calculateHeuristicValues();
         }
     }
 
-    int HeuristicBasis::getValue(const State& state) {
+    int HeuristicBasis::getValue(const State &state) {
         /*
          Returns the heuristic value for a given State s. For that it is using the Stored heuristic values as well
          as the Domain Abstraction for mapping the state to an abstract one.
@@ -56,7 +56,7 @@ namespace domain_abstractions {
             // if we have not calculated before, calculate and store
             if (OTF) {
                 int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
-                heuristicValues.insert(pair<long long , int>(hMapIndex, h_val));
+                heuristicValues.insert(pair<long long, int>(hMapIndex, h_val));
                 return h_val;
             } else {
                 return INF;
@@ -88,7 +88,8 @@ namespace domain_abstractions {
             if (!t) {
                 // When no trace in Abstract space was found -> Task Unsolvable -> log and break
                 if (log.is_at_least_normal()) {
-                    log << "CEGAR round " << rounds << ": Abstract task is unsolvable. -> Normal task is unsolvable" << endl;
+                    log << "CEGAR round " << rounds << ": Abstract task is unsolvable. -> Normal task is unsolvable"
+                        << endl;
                 }
                 break;
             }
@@ -97,7 +98,7 @@ namespace domain_abstractions {
                 if (log.is_at_least_normal()) {
                     log << "CEGAR round " << rounds << ": Found concrete solution during refinement!!!" << endl;
                     // maybe show solution??
-                    for (auto &transition : *t) {
+                    for (auto &transition: *t) {
                         log << transition.op_id << ",";
                     }
                     log << endl;
@@ -128,7 +129,8 @@ namespace domain_abstractions {
             return true;
         }
         if (log.is_at_least_debug()) {
-            log << "CEGAR Termination Check: Start another round of refinement! Time elapsed until now: " << timer.get_elapsed_time() << endl;
+            log << "CEGAR Termination Check: Start another round of refinement! Time elapsed until now: "
+                << timer.get_elapsed_time() << endl;
         }
         return false;
     }
@@ -146,16 +148,18 @@ namespace domain_abstractions {
             nullInit.push_back(vector<int>(vars[varIndex].get_domain_size(), 0));
         }
         // make artificial Flaw out of goal facts
-        shared_ptr<Flaw> tmpFlaw = make_shared<Flaw>(vector<int>(), make_shared<vector<FactPair>>(transitionSystem->getGoalFacts()));
+        shared_ptr<Flaw> tmpFlaw = make_shared<Flaw>(vector<int>(),
+                                                     make_shared<vector<FactPair>>(transitionSystem->getGoalFacts()));
         // create abstraction Instance
-        shared_ptr<DomainAbstraction> initAbstraction = make_shared<DomainAbstraction>(nullInit, log, originalTask, transitionSystem);
+        shared_ptr<DomainAbstraction> initAbstraction = make_shared<DomainAbstraction>(nullInit, log, originalTask,
+                                                                                       transitionSystem);
         // Split and reload instance
         VariableGroupVectors domains = domainSplitter.split(tmpFlaw, initAbstraction);
         initAbstraction->reload(domains);
         return initAbstraction;
     }
 
-    shared_ptr <Trace> HeuristicBasis::cegarFindOptimalTrace(const shared_ptr <DomainAbstraction>& currentAbstraction) {
+    shared_ptr <Trace> HeuristicBasis::cegarFindOptimalTrace(const shared_ptr <DomainAbstraction> &currentAbstraction) {
         /*
          * Uses UniformCostSearch to find the best way through abstract space to goal. Return trace if found.
          * Else return nullptr -> Task is not solvable
@@ -186,7 +190,7 @@ namespace domain_abstractions {
                 }
                 // generate successors and add them to openList
                 DomainAbstractedStates successorVector = currentAbstraction->getSuccessors(nextState);
-                for (const auto& successorNode : successorVector) {
+                for (const auto &successorNode: successorVector) {
                     successorNode->setParent(nextState);
                     openList.push(successorNode);
                 }
@@ -198,14 +202,14 @@ namespace domain_abstractions {
         return nullptr;
     }
 
-    shared_ptr <Flaw> HeuristicBasis::cegarFindFlaw(const shared_ptr <Trace>& trace) {
+    shared_ptr <Flaw> HeuristicBasis::cegarFindFlaw(const shared_ptr <Trace> &trace) {
         /*
          * Tries to apply trace in original task and returns a flaw if we cannot reach goal via this trace.
          * -> Precondition flaw and goal flaws
          * */
         if (log.is_at_least_debug()) {
             log << "CEGAR Find Flaw: now try to find a flaw based on following trace (op-id, target-id).." << endl;
-            for (auto & it : *trace)
+            for (auto &it: *trace)
                 log << ' ' << it;
             log << endl;
         }
@@ -241,8 +245,8 @@ namespace domain_abstractions {
         return nullptr;
     }
 
-    void HeuristicBasis::cegarRefine(const shared_ptr <Flaw>& flaw,
-                                     const shared_ptr <DomainAbstraction>& currentDomainAbstraction) {
+    void HeuristicBasis::cegarRefine(const shared_ptr <Flaw> &flaw,
+                                     const shared_ptr <DomainAbstraction> &currentDomainAbstraction) {
         /*
          * Uses the splitter as well as the retrieved flaw to refine the abstraction
          * */
@@ -256,7 +260,8 @@ namespace domain_abstractions {
         }
     }
 
-    int HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector& startStateValues, long long abstractStateIndex) {
+    int
+    HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector &startStateValues, long long abstractStateIndex) {
         /*
          * Creates Abstract State Instance and returns distance to goal State (In Abstracted State Space) by using uniform cost search!
          * Intended to be used when no heuristic values are precomputed after Abstraction construction.
@@ -283,7 +288,7 @@ namespace domain_abstractions {
                 }
                 // We are using early goal check, thus the successor vector must be sorted!!!
                 DomainAbstractedStates successorVector = abstraction->getSuccessors(nextState);
-                for (const auto& successorNode : successorVector) {
+                for (const auto &successorNode: successorVector) {
                     openList.push(successorNode);
                 }
             }
@@ -307,7 +312,7 @@ namespace domain_abstractions {
                 DomainAbstractedState::getComparator());
         log << "Now generate Abstract Goal States.." << endl;
         // 1. Create All possible goal states (In Abstract State Space) and add them to openList
-        for (const auto& goalState: abstraction->getAbstractGoalStates()) {
+        for (const auto &goalState: abstraction->getAbstractGoalStates()) {
             openList.push(goalState);
         }
         log << "Now generate operators for abstract space..." << endl;
@@ -319,9 +324,10 @@ namespace domain_abstractions {
             openList.pop();
 
             heuristicValues.insert(pair<long long, int>(nextState->get_id(), nextState->getGValue()));
-            for (const auto& predecessor: abstraction->getPredecessors(nextState)) {
+            for (const auto &predecessor: abstraction->getPredecessors(nextState)) {
                 // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
-                if (heuristicValues.find(predecessor->get_id()) == heuristicValues.end() || predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
+                if (heuristicValues.find(predecessor->get_id()) == heuristicValues.end() ||
+                    predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
                     openList.push(predecessor);
                 }
             }

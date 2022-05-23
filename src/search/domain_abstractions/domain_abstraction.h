@@ -37,20 +37,22 @@ namespace domain_abstractions {
         std::vector<std::vector<std::pair<int, int>>> abstractOperatorPostconditions;
 
     public:
-        explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask, std::shared_ptr<TransitionSystem>);
+        explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask,
+                                   std::shared_ptr<TransitionSystem>);
 
         int reload(VariableGroupVectors newAbstraction);
 
-        bool isGoal(const std::shared_ptr<DomainAbstractedState>& candidate);
+        bool isGoal(const std::shared_ptr<DomainAbstractedState> &candidate);
 
-        DomainAbstractedStates getSuccessors(const std::shared_ptr<DomainAbstractedState>& state);
+        DomainAbstractedStates getSuccessors(const std::shared_ptr<DomainAbstractedState> &state);
 
         std::shared_ptr<DomainAbstractedState> getInitialAbstractState();
 
         bool
         groupAssignmentFulfillsFacts(std::vector<int> abstractCandidate, const std::vector<FactPair> &factsToFulfill);
 
-        VariableGroupVector getGroupAssignmentsForConcreteState(std::vector<int> &stateValues); // State -> abstract state
+        VariableGroupVector
+        getGroupAssignmentsForConcreteState(std::vector<int> &stateValues); // State -> abstract state
         long long abstractStateLookupIndex(
                 std::vector<int> &abstractStateRepresentation);// for given Assignments of a State, a position of Abstract state in hvalue map is returned
 
@@ -70,16 +72,15 @@ namespace domain_abstractions {
 
         int getDomainSize(int var);
 
-        std::vector<FactPair> getPrecalcedVariableGroupFacts(int varIndex, int groupNumber);
-
     private:
 
         void preCalculateVariableGroupFacts();
 
-        std::vector<long long> computeNValues(VariableGroupVectors newAbstraction, std::vector<int>& newDomainSizes);
+        std::vector<long long> computeNValues(VariableGroupVectors newAbstraction, std::vector<int> &newDomainSizes);
 
         static bool
-        abstractStateFulfillsAbstractFacts(std::vector<int> abstractState, const std::vector<std::pair<int, int>> &abstractFacts);
+        abstractStateFulfillsAbstractFacts(std::vector<int> abstractState,
+                                           const std::vector<std::pair<int, int>> &abstractFacts);
     };
 }
 

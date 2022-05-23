@@ -34,7 +34,7 @@ namespace domain_abstractions {
         g_value = new_value;
     }
 
-    void DomainAbstractedState::setParent(shared_ptr<DomainAbstractedState> parent) {
+    void DomainAbstractedState::setParent(shared_ptr <DomainAbstractedState> parent) {
         parentAbstractState = std::move(parent);
     }
 
@@ -42,7 +42,7 @@ namespace domain_abstractions {
         incomingOperator_ID = op_id;
     }
 
-    shared_ptr<DomainAbstractedState> DomainAbstractedState::getParent() {
+    shared_ptr <DomainAbstractedState> DomainAbstractedState::getParent() {
         return parentAbstractState;
     }
 }

@@ -18,7 +18,9 @@ namespace domain_abstractions {
 
     public:
         std::shared_ptr<HeuristicBasis> generate_heuristic(const options::Options &opts, utils::LogProxy &log);
+
         DomainAbstractionHeuristic(const options::Options &opts);
+
         ~DomainAbstractionHeuristic();
     };
 }

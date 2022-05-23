@@ -11,7 +11,7 @@ namespace domain_abstractions {
         std::vector<std::vector<int>::iterator> iterators;
 
         int howManyVectors = (int) groupNumbersPerVar.size();
-        for (auto & i : groupNumbersPerVar) {
+        for (auto &i: groupNumbersPerVar) {
             numResultingStates *= (int) i.size();
             iterators.push_back(i.begin());
         }

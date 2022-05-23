@@ -8,18 +8,19 @@ using namespace std;
 
 namespace domain_abstractions {
 
-    DomainSplitter::DomainSplitter(const string& method, utils::LogProxy &log) : currentMethod(getEnumForString(method)), log(log) {
+    DomainSplitter::DomainSplitter(const string &method, utils::LogProxy &log) : currentMethod(
+            getEnumForString(method)), log(log) {
         log << "Set SPLIT METHOD: " << method << endl;
     }
 
     VariableGroupVectors
-    DomainSplitter::split(const shared_ptr<Flaw>& flaw, const shared_ptr<DomainAbstraction>& currentAbstraction) {
+    DomainSplitter::split(const shared_ptr <Flaw> &flaw, const shared_ptr <DomainAbstraction> &currentAbstraction) {
         // Select method on how to split and call Submethod. We return the new Abstraction
         if (currentMethod == SplitMethod::HARDSPLIT) {
             return performHardSplit(flaw, currentAbstraction);
         } else if (currentMethod == SplitMethod::EVENSPLIT) {
             return performEvenSplit(flaw, currentAbstraction);
-        }else {
+        } else {
             // default fallback if unknown
             //log << "CEGAR -- Split: using fallback Method(Hard-Split) since given method not specified!" << endl;
             return performHardSplit(flaw, currentAbstraction);
@@ -27,7 +28,8 @@ namespace domain_abstractions {
     }
 
     VariableGroupVectors
-    DomainSplitter::performHardSplit(const shared_ptr<Flaw>& flaw, const shared_ptr<DomainAbstraction>& currentAbstraction) {
+    DomainSplitter::performHardSplit(const shared_ptr <Flaw> &flaw,
+                                     const shared_ptr <DomainAbstraction> &currentAbstraction) {
         /*
          * Split missed fact from rest of facts in same group for every variable (that has missed facts in their domain)
          * */
@@ -39,21 +41,13 @@ namespace domain_abstractions {
                 stateValues);
         // TODO: we assume that there is max one missed fact for every variable!? -> YES in the formalism used in downward yes!
         shared_ptr<vector<FactPair>> missedFacts = flaw->missedFacts;
-        if (log.is_at_least_debug()) {
-            log << "--Missed facts: " << *missedFacts << endl;
-            log << "Real State where flaw happened: " << stateValues << endl;
-            log << "--Abstract State Where Flaw happened: " << abstractStateWhereFlawHappened << endl;
-            for (const auto& factPair: *missedFacts) {
-                log << "Group Facts for missed var(in real space)" << factPair.var << ": "<< currentAbstraction->getVariableGroupFacts(factPair.var, abstractStateWhereFlawHappened.at(factPair.var)) << endl;
-            }
-        }
         assert(!missedFacts->empty());
         // loop over variables and their domains
-        for (auto factPair : *missedFacts) {
+        for (auto factPair: *missedFacts) {
             VariableGroupVector oldVariableAbstractDomain = oldAbstraction.at(factPair.var);
             VariableGroupVector newVariableAbstractDomain = oldVariableAbstractDomain;
             int maxGroupNumber = *max_element(oldVariableAbstractDomain.begin(), oldVariableAbstractDomain.end());
-            assert(maxGroupNumber <= (int)oldVariableAbstractDomain.size());
+            assert(maxGroupNumber <= (int) oldVariableAbstractDomain.size());
             // just give missed-fact a new group TODO: if check is already in separate group flaw should not have been happened!
             //int domainIndex = currentAbstraction->getDomainIndexOfVariableValue(factPair.var, factPair.value);
             //assert(domainIndex == factPair.value);
@@ -88,7 +82,7 @@ namespace domain_abstractions {
         }*/
         assert(!missedFacts->empty());
         // loop over Missed Facts
-        for (auto factPair : *missedFacts) {
+        for (auto factPair: *missedFacts) {
             // Get and Copy domain abstraction of affected variable
             VariableGroupVector oldVariableAbstractDomain = oldAbstraction.at(factPair.var);
             VariableGroupVector newVariableAbstractDomain = oldVariableAbstractDomain;
@@ -99,7 +93,8 @@ namespace domain_abstractions {
 
             // change half of old group (-1)
             int oldGroupNr = oldVariableAbstractDomain.at(factPair.value);
-            vector<FactPair> oldGroupFacts = currentAbstraction->getPrecalcedVariableGroupFacts(factPair.var, oldGroupNr);
+            vector<FactPair> oldGroupFacts = currentAbstraction->getVariableGroupFacts(factPair.var,
+                                                                                                oldGroupNr);
             int oldGroupSize = (int) oldGroupFacts.size();
             int changed = 1;
             int toChange = oldGroupSize / 2;

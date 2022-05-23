@@ -54,7 +54,7 @@ namespace domain_abstractions {
                 abstractSolutionTrace->emplace_front(
                         Transition(currentState->get_operator_id(), currentState->get_id()));
                 currentState = currentState->getParent();
-                      // TODO: Here an error was located
+                // TODO: Here an error was located
             }
             return abstractSolutionTrace;
         }
@@ -63,8 +63,10 @@ namespace domain_abstractions {
         getComparator() {
             std::function<bool(std::shared_ptr<DomainAbstractedState>,
                                std::shared_ptr<DomainAbstractedState>)> comparator = [](
-                    const std::shared_ptr<DomainAbstractedState>& left, const std::shared_ptr<DomainAbstractedState>& right) {
-                return (left->getGValue()) > (right->getGValue()); // TODO > < changed because weird c++ comparator logic
+                    const std::shared_ptr<DomainAbstractedState> &left,
+                    const std::shared_ptr<DomainAbstractedState> &right) {
+                return (left->getGValue()) >
+                       (right->getGValue()); // TODO > < changed because weird c++ comparator logic
             };
             return comparator;
         }

@@ -33,9 +33,10 @@ namespace domain_abstractions {
         utils::CountdownTimer timer;
         bool terminationFlag;
     public:
-        explicit HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask, const std::string& splitMethod);
+        explicit HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask,
+                                const std::string &splitMethod);
 
-        int getValue(const State& state);
+        int getValue(const State &state);
 
         void construct(TaskProxy originalTask);
 
@@ -46,15 +47,16 @@ namespace domain_abstractions {
 
         bool cegarShouldTerminate();
 
-        std::shared_ptr<Trace> cegarFindOptimalTrace(const std::shared_ptr<DomainAbstraction>& currentAbstraction);
+        std::shared_ptr<Trace> cegarFindOptimalTrace(const std::shared_ptr<DomainAbstraction> &currentAbstraction);
 
-        void cegarRefine(const std::shared_ptr<Flaw>& flaw, const std::shared_ptr<DomainAbstraction>& currentDomainAbstraction);
+        void cegarRefine(const std::shared_ptr<Flaw> &flaw,
+                         const std::shared_ptr<DomainAbstraction> &currentDomainAbstraction);
 
-        std::shared_ptr<Flaw> cegarFindFlaw(const std::shared_ptr<Trace>& trace);
+        std::shared_ptr<Flaw> cegarFindFlaw(const std::shared_ptr<Trace> &trace);
 
         std::shared_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
 
-        int calculateHValueOnTheFly(const VariableGroupVector& startStateValues, long long abstractStateIndex);
+        int calculateHValueOnTheFly(const VariableGroupVector &startStateValues, long long abstractStateIndex);
     };
 }
 

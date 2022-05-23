@@ -10,7 +10,7 @@ using namespace std;
 
 namespace domain_abstractions {
 
-    static vector<vector<FactPair>> get_preconditions_by_operator(
+    static vector <vector<FactPair>> get_preconditions_by_operator(
             const OperatorsProxy &ops) {
         /*
          * Seems to return one vector per operator. Each vector is containing the preconditions for applying the
@@ -26,7 +26,7 @@ namespace domain_abstractions {
         return preconditions_by_operator;
     }
 
-    static vector<FactPair> get_variable_assignments_for_operator(
+    static vector <FactPair> get_variable_assignments_for_operator(
             const OperatorProxy &op) {
         // Use map to obtain sorted postconditions.
         map<int, int> var_to_post;
@@ -47,7 +47,7 @@ namespace domain_abstractions {
         return postconditions;
     }
 
-    static vector<vector<FactPair>> get_postconditions_by_operator(
+    static vector <vector<FactPair>> get_postconditions_by_operator(
             const OperatorsProxy &ops) {
         /*
          * Returns a vector of FactPair Vectors. Each vector is representing the postconditions that hold
@@ -62,14 +62,15 @@ namespace domain_abstractions {
     }
 
 
-    TransitionSystem::TransitionSystem(const OperatorsProxy& ops, TaskProxy proxy, utils::LogProxy &log)
+    TransitionSystem::TransitionSystem(const OperatorsProxy &ops, TaskProxy proxy, utils::LogProxy &log)
             : preconditions_by_operator(get_preconditions_by_operator(ops)),
               postconditions_by_operator(get_postconditions_by_operator(ops)),
-              originalTask(proxy), log(log), concreteInitialState(originalTask.get_initial_state().get_unpacked_values()),
-              goalFacts(task_properties::get_fact_pairs(originalTask.get_goals())){
+              originalTask(proxy), log(log),
+              concreteInitialState(originalTask.get_initial_state().get_unpacked_values()),
+              goalFacts(task_properties::get_fact_pairs(originalTask.get_goals())) {
     }
 
-    vector<FactPair> TransitionSystem::transitionApplicable(vector<int> currentState, Transition toApply) const {
+    vector <FactPair> TransitionSystem::transitionApplicable(vector<int> currentState, Transition toApply) const {
         /*
          * Checks whether a Transition is applicable in the original Task! If Yes, an empty vector is returned, if not
          * The facts that are needed for fulfillment == all preconditions
@@ -85,7 +86,7 @@ namespace domain_abstractions {
         return missedFacts;
     }
 
-    vector<FactPair> TransitionSystem::isGoal(const vector<int>& currentState) {
+    vector <FactPair> TransitionSystem::isGoal(const vector<int> &currentState) {
         /*
          * Checks whether a Transition is applicable in the original Task! If Yes, an empty vector is returned, if not
          * The facts that are needed for fulfillment == all preconditions
@@ -121,11 +122,11 @@ namespace domain_abstractions {
         return lookup_value(postconditions_by_operator[op_id], var);
     }
 
-    vector<FactPair> TransitionSystem::get_precondition_assignments_for_operator(int operatorID) const {
+    vector <FactPair> TransitionSystem::get_precondition_assignments_for_operator(int operatorID) const {
         return preconditions_by_operator[operatorID];
     }
 
-    vector<FactPair> TransitionSystem::get_postcondition_assignments_for_operator(int operatorID) const {
+    vector <FactPair> TransitionSystem::get_postcondition_assignments_for_operator(int operatorID) const {
         return postconditions_by_operator[operatorID];
     }
 

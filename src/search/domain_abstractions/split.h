@@ -12,7 +12,7 @@ namespace domain_abstractions {
     enum class SplitMethod {
         HARDSPLIT,  // new groups -> For every variable: fact that was part of flaw becomes a new group
         EVENSPLIT   // new groups -> For every variable: fact that was part of flaw + fill up new group so that
-                    //               half of old group where fact was located is in new group and rest in old
+        //               half of old group where fact was located is in new group and rest in old
     };
 
     class DomainSplitter {
@@ -20,13 +20,13 @@ namespace domain_abstractions {
         utils::LogProxy &log;
 
     public:
-        DomainSplitter(const std::string& method, utils::LogProxy &log);
+        DomainSplitter(const std::string &method, utils::LogProxy &log);
 
-        VariableGroupVectors split(const std::shared_ptr<Flaw>& flaw,
-                                   const std::shared_ptr<DomainAbstraction>& currentAbstraction);
+        VariableGroupVectors split(const std::shared_ptr<Flaw> &flaw,
+                                   const std::shared_ptr<DomainAbstraction> &currentAbstraction);
 
         // map string to ENUM
-        static SplitMethod getEnumForString(const std::string& splitMethodSuggestion) {
+        static SplitMethod getEnumForString(const std::string &splitMethodSuggestion) {
             if (splitMethodSuggestion == "HardSplit") {
                 return SplitMethod::HARDSPLIT;
             } else if (splitMethodSuggestion == "EvenSplit") {
@@ -38,11 +38,11 @@ namespace domain_abstractions {
         }
 
     private:
-        VariableGroupVectors performHardSplit(const std::shared_ptr<Flaw>& flaw,
-                                              const std::shared_ptr<DomainAbstraction>& currentAbstraction);
+        VariableGroupVectors performHardSplit(const std::shared_ptr<Flaw> &flaw,
+                                              const std::shared_ptr<DomainAbstraction> &currentAbstraction);
 
-        VariableGroupVectors performEvenSplit(const std::shared_ptr<Flaw>& flaw,
-                                              const std::shared_ptr<DomainAbstraction>& currentAbstraction);
+        VariableGroupVectors performEvenSplit(const std::shared_ptr<Flaw> &flaw,
+                                              const std::shared_ptr<DomainAbstraction> &currentAbstraction);
     };
 
 }
