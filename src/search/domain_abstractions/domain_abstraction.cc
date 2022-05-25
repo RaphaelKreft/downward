@@ -127,7 +127,7 @@ namespace domain_abstractions {
         vector<long long> newNValuesForHash(newAbstraction.size(), 1);
         for (int i = 0; i < (int) newAbstraction.size(); i++) {
             // loop over groups in abstract domain for current variable v_i
-            for (int j = 0; j <= i - 1; j++) {
+            for (int j = 0; j < i - 1; j++) {
                 VariableGroupVector varGroupMapping = newAbstraction[j];
                 long long numGroups = newDomainSizes.at(j);
                 assert(numGroups > 0);

@@ -108,6 +108,7 @@ namespace domain_abstractions {
             // If a Flaw has been found we need to refine the Abstraction
             cegarRefine(f, currentAbstraction);
         }
+        log << "#CEGAR Loop Iterations: " << rounds << endl;
         return currentAbstraction;
     }
 

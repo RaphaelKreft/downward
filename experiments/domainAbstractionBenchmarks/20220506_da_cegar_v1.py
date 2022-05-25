@@ -54,7 +54,7 @@ print(f"We have {len(CONFIGS)} configurations to run for every task!")
 print(f"We think repo is at: {REPO}")
 print(f"We think benchmarks are at: {BENCHMARKS_DIR}")
 print(f"We have {len(SUITE)} tasks in our suite!")
-		
+
 exp = common_setup.IssueExperiment(
     revisions=[REVISION],
     configs=CONFIGS,
@@ -66,12 +66,13 @@ exp.add_suite(BENCHMARKS_DIR, SUITE)
 exp.add_parser(exp.PLANNER_PARSER)
 exp.add_parser(exp.EXITCODE_PARSER)
 exp.add_parser(exp.SINGLE_SEARCH_PARSER)
+exp.add_parser("parser.py")
 
 exp.add_step("build", exp.build)
 exp.add_step("start", exp.start_runs)
 exp.add_fetcher(name="fetch")
 
-exp.add_absolute_report_step()
+exp.add_absolute_report_step(attributes=(["#AbstractStates", "#CEGAR Loop Iterations"] + common_setup.IssueExperiment.DEFAULT_TABLE_ATTRIBUTES))
 exp.add_parse_again_step()
 
 exp.run_steps()
