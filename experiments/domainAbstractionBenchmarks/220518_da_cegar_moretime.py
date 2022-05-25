@@ -1,6 +1,14 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+
+"""
+Lookup List + OTF Calculation
+logging errors due to overflow mitigated -> early abortion when index gets too large
+Hardsplit Method
+More times 
+"""
+
 import os
 
 import common_setup
@@ -38,12 +46,12 @@ def setup_environment():
     return benchmarks_dir, suite, environment
 
 
-REVISION = "ae1552d"
+REVISION = "106bffc2f"
 REPO = os.environ["DOWNWARD_REPO"]
 BENCHMARKS_DIR, SUITE, ENVIRONMENT = setup_environment()
 
 # time in seconds
-precomp_times = [900, 600, 1200]
+precomp_times = [120, 300, 900, 600]
 CONFIGS = []
 
 for time in precomp_times:
