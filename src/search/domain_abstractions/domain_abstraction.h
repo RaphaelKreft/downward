@@ -28,6 +28,7 @@ namespace domain_abstractions {
         std::vector<int> operatorCosts; // for faster operator cost access
         std::vector<int> domainSizes; // store num groups/domain size per variable. Used to get rid of max_elementops
         long long numAbstractStates{0};
+        int max_states;
 
         // precalced for every reload for performance reasons
         std::vector<std::vector<std::vector<FactPair>>> variableGroupFacts; // for each variable, for each group the vector of FactPairs is stored
@@ -38,7 +39,7 @@ namespace domain_abstractions {
 
     public:
         explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask,
-                                   std::shared_ptr<TransitionSystem>);
+                                   std::shared_ptr<TransitionSystem>, int max_states);
 
         int reload(VariableGroupVectors newAbstraction);
 

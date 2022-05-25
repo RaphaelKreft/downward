@@ -9,9 +9,9 @@ namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
     static const bool OTF = true;
 
-    HeuristicBasis::HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask,
+    HeuristicBasis::HeuristicBasis(double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
                                    const string &splitMethodSuggestion) :
-            max_time(max_time), log(log),
+            max_time(max_time), max_states(max_states),log(log),
             transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
             domainSplitter(DomainSplitter(splitMethodSuggestion, log)), timer(max_time) {
         // reserve memory padding, at this time timer is also already started!
@@ -39,7 +39,7 @@ namespace domain_abstractions {
         }
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF) {
-            heuristicValues = calculateHeuristicValues();
+            calculateHeuristicValues();
         }
     }
 
@@ -108,6 +108,7 @@ namespace domain_abstractions {
             // If a Flaw has been found we need to refine the Abstraction
             cegarRefine(f, currentAbstraction);
         }
+        log << "#CEGAR Loop Iterations: " << rounds << endl;
         return currentAbstraction;
     }
 
@@ -122,7 +123,7 @@ namespace domain_abstractions {
                 log << "CEGAR Termination Check: Reached memory limit." << endl;
             }
             return true;
-        } else if (terminationFlag) {
+        } else if (terminationFlag) { // set ture if abstraction too fine or max-states reached
             if (log.is_at_least_normal()) {
                 log << "CEGAR Termination Check: Abstraction getting too fine, hash-index had Overflow." << endl;
             }
@@ -152,7 +153,7 @@ namespace domain_abstractions {
                                                      make_shared<vector<FactPair>>(transitionSystem->getGoalFacts()));
         // create abstraction Instance
         shared_ptr<DomainAbstraction> initAbstraction = make_shared<DomainAbstraction>(nullInit, log, originalTask,
-                                                                                       transitionSystem);
+                                                                                       transitionSystem, max_states);
         // Split and reload instance
         VariableGroupVectors domains = domainSplitter.split(tmpFlaw, initAbstraction);
         initAbstraction->reload(domains);
@@ -300,7 +301,7 @@ namespace domain_abstractions {
         return INF;
     }
 
-    map<long long, int> HeuristicBasis::calculateHeuristicValues() {
+    void HeuristicBasis::calculateHeuristicValues() {
         /*
          * Calculates the heuristic values by using Dijkstra Algorithm to calculate Distances from goal states
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
@@ -333,6 +334,5 @@ namespace domain_abstractions {
             }
 
         }
-        return heuristicValues;
     }
 }

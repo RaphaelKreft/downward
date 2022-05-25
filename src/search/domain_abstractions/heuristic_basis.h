@@ -24,6 +24,7 @@ namespace domain_abstractions {
 
     class HeuristicBasis {
         double max_time;
+        int max_states;
         utils::LogProxy &log;
 
         std::shared_ptr<TransitionSystem> transitionSystem;
@@ -33,7 +34,7 @@ namespace domain_abstractions {
         utils::CountdownTimer timer;
         bool terminationFlag;
     public:
-        explicit HeuristicBasis(double max_time, utils::LogProxy &log, TaskProxy originalTask,
+        explicit HeuristicBasis(double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
                                 const std::string &splitMethod);
 
         int getValue(const State &state);
@@ -43,7 +44,7 @@ namespace domain_abstractions {
     protected:
         std::shared_ptr<DomainAbstraction> createAbstraction(TaskProxy originalTask);
 
-        std::map<long long, int> calculateHeuristicValues();
+        void calculateHeuristicValues();
 
         bool cegarShouldTerminate();
 

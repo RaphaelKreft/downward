@@ -28,7 +28,7 @@ namespace domain_abstractions {
         for (int i = 0; i < (int) newAbstraction.size(); i++) {
             maxIndex += (newValues.at(i) * (newDomainSizes.at(i) - 1));
         }
-        if (maxIndex < 0) {
+        if (maxIndex < 0 || maxIndex > max_states) {
             //keep old Abstraction
             return -1;
         }
@@ -102,7 +102,7 @@ namespace domain_abstractions {
 
 
     DomainAbstraction::DomainAbstraction(VariableGroupVectors domainMap, utils::LogProxy &log, TaskProxy originalTask,
-                                         shared_ptr <TransitionSystem> transitionSystem) :
+                                         shared_ptr <TransitionSystem> transitionSystem, int max_states) :
             transition_system(std::move(transitionSystem)),
             concrete_initial_state(originalTask.get_initial_state()),
             goal_facts(task_properties::get_fact_pairs(originalTask.get_goals())),
@@ -111,7 +111,8 @@ namespace domain_abstractions {
             variableGroupVectors(std::move(domainMap)),
             nValuesForHash(variableGroupVectors.size(), 0),
             operatorCosts(task_properties::get_operator_costs(originalTask)),
-            domainSizes(variableGroupVectors.size(), 1) {
+            domainSizes(variableGroupVectors.size(), 1),
+            max_states(max_states) {
         // precompute N-Values for perfect hash function that is needed for lookup
         reload(variableGroupVectors);
     }
@@ -129,7 +130,7 @@ namespace domain_abstractions {
             // loop over groups in abstract domain for current variable v_i
             for (int j = 0; j <= i - 1; j++) {
                 VariableGroupVector varGroupMapping = newAbstraction[j];
-                long long numGroups = newDomainSizes.at(j);
+                int numGroups = newDomainSizes.at(j);
                 assert(numGroups > 0);
                 newNValuesForHash.at(i) *= numGroups;
             }
@@ -199,13 +200,6 @@ namespace domain_abstractions {
 
         return successorList;
     }
-
-    /*
-     * TODO: Ideas to safe Memory/Time
-     *  1. Make priority queue just with index and costs and store state object elewhere/create otf
-     *  2. Use better priority queues?
-     *  3. Better Algorithms for successor/applicable etc?
-     * */
 
     DomainAbstractedStates DomainAbstraction::getPredecessors(const shared_ptr <DomainAbstractedState> &state) {
         /*
