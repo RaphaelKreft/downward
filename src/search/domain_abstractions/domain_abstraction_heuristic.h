@@ -14,12 +14,12 @@ namespace domain_abstractions {
         //Heuristic instance that is stored and used to get h-values and construct it
         std::shared_ptr<HeuristicBasis> heuristic_function;
     protected:
-        virtual int compute_heuristic(const State &ancestor_state) override;
+        int compute_heuristic(const State &ancestor_state) override;
 
     public:
         std::shared_ptr<HeuristicBasis> generate_heuristic(const options::Options &opts, utils::LogProxy &log);
 
-        DomainAbstractionHeuristic(const options::Options &opts);
+        explicit DomainAbstractionHeuristic(const options::Options &opts);
 
         ~DomainAbstractionHeuristic();
     };

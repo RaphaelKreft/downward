@@ -10,7 +10,6 @@ namespace domain_abstractions {
 
     DomainSplitter::DomainSplitter(const string &method, utils::LogProxy &log) : currentMethod(
             getEnumForString(method)), log(log) {
-        log << "Set SPLIT METHOD: " << method << endl;
     }
 
     VariableGroupVectors
@@ -36,10 +35,11 @@ namespace domain_abstractions {
         VariableGroupVectors oldAbstraction = currentAbstraction->getAbstractDomains();
         VariableGroupVectors newAbstraction = oldAbstraction;
 
-        vector<int> stateValues = flaw->getStateWhereFlawHappensCopy();
+        //vector<int> stateValues = flaw->getStateWhereFlawHappensCopy();
+        vector<int> stateValues = *(flaw->stateWhereFlawHappens);
         vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
-        // TODO: we assume that there is max one missed fact for every variable!? -> YES in the formalism used in downward yes!
+        // we assume that there is max one missed fact for every variable -> in the formalism used in downward yes!
         shared_ptr<vector<FactPair>> missedFacts = flaw->missedFacts;
         assert(!missedFacts->empty());
         // loop over variables and their domains
@@ -49,8 +49,6 @@ namespace domain_abstractions {
             int maxGroupNumber = *max_element(oldVariableAbstractDomain.begin(), oldVariableAbstractDomain.end());
             assert(maxGroupNumber <= (int) oldVariableAbstractDomain.size());
             // just give missed-fact a new group TODO: if check is already in separate group flaw should not have been happened!
-            //int domainIndex = currentAbstraction->getDomainIndexOfVariableValue(factPair.var, factPair.value);
-            //assert(domainIndex == factPair.value);
             newVariableAbstractDomain[factPair.value] = maxGroupNumber + 1;
             newAbstraction[factPair.var] = newVariableAbstractDomain;
         }
@@ -67,7 +65,7 @@ namespace domain_abstractions {
         VariableGroupVectors oldAbstraction = currentAbstraction->getAbstractDomains();
         VariableGroupVectors newAbstraction = oldAbstraction;
 
-        vector<int> stateValues = flaw->getStateWhereFlawHappensCopy();
+        vector<int> stateValues = *(flaw->stateWhereFlawHappens);
         vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
 
