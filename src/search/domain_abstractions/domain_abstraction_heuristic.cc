@@ -24,6 +24,7 @@ namespace domain_abstractions {
             task_properties::dump_goals(task_proxy.get_goals());
         }
         double max_time = opts.get<double>("max_time");
+        int max_states = opts.get<int>("max_states");
         string splitMethod = opts.get<string>("split_method");
         shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(max_time, log, task_proxy, splitMethod);
         // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
@@ -59,7 +60,7 @@ namespace domain_abstractions {
                                  "on Domain Abstractions");
         parser.add_option<int>(
                 "max_states",
-                "maximum sum of abstract states over all abstractions",
+                "maximum sum of abstract states in the abstractions",
                 "infinity",
                 Bounds("1", "infinity"));
         parser.add_option<double>(
