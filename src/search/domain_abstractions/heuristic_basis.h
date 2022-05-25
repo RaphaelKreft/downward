@@ -23,6 +23,7 @@ class State;
 namespace domain_abstractions {
 
     class HeuristicBasis {
+        bool OTF; // Will the heuristic values be calculated on the fly
         double max_time;
         int max_states;
         utils::LogProxy &log;
@@ -34,7 +35,7 @@ namespace domain_abstractions {
         utils::CountdownTimer timer;
         bool terminationFlag;
     public:
-        explicit HeuristicBasis(double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
+        explicit HeuristicBasis(bool PRECALC, double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
                                 const std::string &splitMethod);
 
         int getValue(const State &state);

@@ -7,11 +7,10 @@ using namespace std;
 
 namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
-    static const bool OTF = true;
 
-    HeuristicBasis::HeuristicBasis(double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
+    HeuristicBasis::HeuristicBasis(bool PRECALC, double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
                                    const string &splitMethodSuggestion) :
-            max_time(max_time), max_states(max_states),log(log),
+            OTF(!PRECALC), max_time(max_time), max_states(max_states),log(log),
             transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
             domainSplitter(DomainSplitter(splitMethodSuggestion, log)), timer(max_time) {
         // reserve memory padding, at this time timer is also already started!
