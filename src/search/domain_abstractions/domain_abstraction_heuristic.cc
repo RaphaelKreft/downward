@@ -26,7 +26,7 @@ namespace domain_abstractions {
         double max_time = opts.get<double>("max_time");
         int max_states = opts.get<int>("max_states");
         string splitMethod = opts.get<string>("split_method");
-        shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(max_time, log, task_proxy, splitMethod);
+        shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(max_time, max_states,log, task_proxy, splitMethod);
         // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
         task_properties::verify_no_axioms(task_proxy);
         task_properties::verify_no_conditional_effects(task_proxy);
