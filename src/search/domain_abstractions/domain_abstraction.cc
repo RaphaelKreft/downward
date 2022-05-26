@@ -297,7 +297,7 @@ namespace domain_abstractions {
         // Now construct the Goal states
         log << "ABSTR GOAL STATES: gen group combinations..." << endl;
         for (auto &goalState: groupCombinations(consideredGroupsPerVar)) {
-            log << goalState << endl;
+            //log << goalState << endl;
             shared_ptr<DomainAbstractedState> goalSearchNode = make_shared<DomainAbstractedState>(goalState,
                                                                                                   abstractStateLookupIndex(
                                                                                                           goalState));

@@ -36,6 +36,9 @@ namespace domain_abstractions {
             log << "Final Abstraction: " << abstraction->getAbstractDomains() << endl;
             log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;
         }
+        // Create vector for Abstraction
+        heuristicValues = vector<int>(abstraction->getNumberOfAbstractStates(), INF);
+
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF) {
             calculateHeuristicValues();
@@ -51,11 +54,11 @@ namespace domain_abstractions {
         vector<int> correspondingAbstractState = abstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
         long long hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
-        if (heuristicValues.find(hMapIndex) == heuristicValues.end()) {
+        if (heuristicValues[hMapIndex] == INF) {
             // if we have not calculated before, calculate and store
             if (OTF) {
                 int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
-                heuristicValues.insert(pair<long long, int>(hMapIndex, h_val));
+                heuristicValues[hMapIndex] = h_val;
                 return h_val;
             } else {
                 return INF;
@@ -306,7 +309,6 @@ namespace domain_abstractions {
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
-
         // perform backward-Search from Goal using Dijkstras Algorithm
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
@@ -315,7 +317,6 @@ namespace domain_abstractions {
         for (const auto &goalState: abstraction->getAbstractGoalStates()) {
             openList.push(goalState);
         }
-        log << "Now generate operators for abstract space..." << endl;
         abstraction->generateAbstractTransitionSystem();
         // 2. Run Dijkstras Algorithm for backward search from every goal
         log << "Now run backward search..." << endl;
@@ -323,15 +324,17 @@ namespace domain_abstractions {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
 
-            heuristicValues.insert(pair<long long, int>(nextState->get_id(), nextState->getGValue()));
-            for (const auto &predecessor: abstraction->getPredecessors(nextState)) {
+            if (heuristicValues.at(nextState->get_id()) < nextState->getGValue()) {
+                continue;
+            }
+            for (const auto& predecessor: abstraction->getPredecessors(nextState)) {
                 // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
-                if (heuristicValues.find(predecessor->get_id()) == heuristicValues.end() ||
-                    predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
+                assert(predecessor->get_id() < (int) heuristicValues.size());
+                if (predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
+                    heuristicValues.at(predecessor->get_id()) = predecessor->getGValue();
                     openList.push(predecessor);
                 }
             }
-
         }
     }
 }

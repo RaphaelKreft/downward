@@ -30,7 +30,7 @@ namespace domain_abstractions {
 
         std::shared_ptr<TransitionSystem> transitionSystem;
         std::shared_ptr<DomainAbstraction> abstraction;
-        std::map<long long, int> heuristicValues;
+        std::vector<int> heuristicValues;
         DomainSplitter domainSplitter;
         utils::CountdownTimer timer;
         bool terminationFlag;
