@@ -25,8 +25,9 @@ namespace domain_abstractions {
         }
         double max_time = opts.get<double>("max_time");
         int max_states = opts.get<int>("max_states");
+        bool precalculation = opts.get<bool>("precalculation");
         string splitMethod = opts.get<string>("split_method");
-        shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(max_time, max_states,log, task_proxy, splitMethod);
+        shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(precalculation, max_time, max_states,log, task_proxy, splitMethod);
         // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
         task_properties::verify_no_axioms(task_proxy);
         task_properties::verify_no_conditional_effects(task_proxy);
@@ -71,7 +72,9 @@ namespace domain_abstractions {
         parser.add_option<string>("split_method",
                                   "The Method how the Abstraction Refinement works",
                                   "HardSplit");
-
+        parser.add_option<bool>("precalculation",
+                                "Determines whether h-values are precalculated or determined on the fly",
+                                "false");
         Heuristic::add_options_to_parser(parser);
         Options opts = parser.parse();
         if (parser.dry_run())

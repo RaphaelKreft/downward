@@ -22,8 +22,6 @@ namespace domain_abstractions {
     const int INF = std::numeric_limits<int>::max();
 
     using Trace = std::deque<Transition>;
-    //using DomainAbstractedStates = std::vector<DomainAbstractedState *>;
-    // same as in domain_abstracted_task.cc
     // Group mapping vectors
     using VariableGroupVector = std::vector<int>;
     using VariableGroupVectors = std::vector<VariableGroupVector>;
@@ -55,14 +53,6 @@ namespace domain_abstractions {
             assert(!missedF->empty());
             stateWhereFlawHappens = std::make_shared<std::vector<int>>(flawBaseState);
             missedFacts = missedF;
-        }
-
-        std::vector<int> getStateWhereFlawHappensCopy() {
-            std::vector<int> copyVec;
-            for (int &i: *stateWhereFlawHappens) {
-                copyVec.push_back(i);
-            }
-            return copyVec;
         }
     };
 }

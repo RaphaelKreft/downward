@@ -1,8 +1,10 @@
 #ifndef FAST_DOWNWARD_DA_UTILS_H
 #define FAST_DOWNWARD_DA_UTILS_H
 
+#include <random>
 #include <vector>
 #include <cassert>
+#include <random>
 
 namespace domain_abstractions {
     std::vector<std::vector<int>> groupCombinations(std::vector<std::vector<int>> groupNumbersPerVar) {
@@ -38,9 +40,31 @@ namespace domain_abstractions {
             }
         }
         return resultingStates;
-    };
+    }
 
-};
+    std::vector<int> iRange(int start, int end) {
+        /*
+         * Return a range of integers including start and end
+         * */
+        std::vector<int> range;
+        for (int i = start; i <= end; i++) {
+            range.push_back(i);
+        }
+        return range;
+    }
+
+    std::vector<int> uniqueRandomPickFromList(int numElements, std::vector<int> toChooseFrom) {
+        // create set of unique nums of input vector
+        std::unordered_set<int> choseSet(toChooseFrom.begin(), toChooseFrom.end());
+        std::vector<int> toShuffle(choseSet.begin(), choseSet.end());
+        std::shuffle(toShuffle.begin(), toShuffle.end(), std::mt19937(std::random_device()()));
+
+        std::vector<int> elementSelection(toShuffle.begin(), toShuffle.begin()+numElements);
+        assert( (int) elementSelection.size() == numElements);
+        return elementSelection;
+    }
+
+}
 
 
 #endif //FAST_DOWNWARD_DA_UTILS_H
