@@ -8,9 +8,9 @@
 #include "../utils/logging.h"
 #include "../utils/memory.h"
 
+#include "split.h"
 #include "domain_abstraction.h"
 #include "data_structures.h"
-#include "split.h"
 
 #include <algorithm>
 #include <cassert>

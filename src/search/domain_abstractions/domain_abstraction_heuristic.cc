@@ -71,7 +71,7 @@ namespace domain_abstractions {
                 Bounds("0.0", "infinity"));
         parser.add_option<string>("split_method",
                                   "The Method how the Abstraction Refinement works",
-                                  "HardSplit");
+                                  "SingleValueSplit");
         parser.add_option<bool>("precalculation",
                                 "Determines whether h-values are precalculated or determined on the fly",
                                 "false");

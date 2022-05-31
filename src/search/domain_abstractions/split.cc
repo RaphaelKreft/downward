@@ -1,8 +1,8 @@
 #include "split.h"
-#include "data_structures.h"
 
 #include <vector>
 #include <cassert>
+#include "da_utils.h"
 
 using namespace std;
 
@@ -15,20 +15,20 @@ namespace domain_abstractions {
     VariableGroupVectors
     DomainSplitter::split(const shared_ptr <Flaw> &flaw, const shared_ptr <DomainAbstraction> &currentAbstraction) {
         // Select method on how to split and call Submethod. We return the new Abstraction
-        if (currentMethod == SplitMethod::HARDSPLIT) {
-            return performHardSplit(flaw, currentAbstraction);
-        } else if (currentMethod == SplitMethod::EVENSPLIT) {
-            return performEvenSplit(flaw, currentAbstraction);
+        if (currentMethod == SplitMethod::SINGLEVALUESPLIT) {
+            return performSingleValueSplit(flaw, currentAbstraction);
+        } else if (currentMethod == SplitMethod::RANDOMUNIFORMSPLIT) {
+            return performRandomUniformSplit(flaw, currentAbstraction);
         } else {
             // default fallback if unknown
             //log << "CEGAR -- Split: using fallback Method(Hard-Split) since given method not specified!" << endl;
-            return performHardSplit(flaw, currentAbstraction);
+            return performSingleValueSplit(flaw, currentAbstraction);
         }
     }
 
     VariableGroupVectors
-    DomainSplitter::performHardSplit(const shared_ptr <Flaw> &flaw,
-                                     const shared_ptr <DomainAbstraction> &currentAbstraction) {
+    DomainSplitter::performSingleValueSplit(const shared_ptr <Flaw> &flaw,
+                                            const shared_ptr <DomainAbstraction> &currentAbstraction) {
         /*
          * Split missed fact from rest of facts in same group for every variable (that has missed facts in their domain)
          * */
@@ -46,18 +46,17 @@ namespace domain_abstractions {
         for (auto factPair: *missedFacts) {
             VariableGroupVector oldVariableAbstractDomain = oldAbstraction.at(factPair.var);
             VariableGroupVector newVariableAbstractDomain = oldVariableAbstractDomain;
-            int maxGroupNumber = *max_element(oldVariableAbstractDomain.begin(), oldVariableAbstractDomain.end());
-            assert(maxGroupNumber <= (int) oldVariableAbstractDomain.size());
-            // just give missed-fact a new group TODO: if check is already in separate group flaw should not have been happened!
-            newVariableAbstractDomain[factPair.value] = maxGroupNumber + 1;
+            int domainSize = currentAbstraction->getDomainSize(factPair.var);
+            // just give missed-fact a new group
+            newVariableAbstractDomain[factPair.value] = domainSize;
             newAbstraction[factPair.var] = newVariableAbstractDomain;
         }
         assert(newAbstraction.size() == oldAbstraction.size());
         return newAbstraction;
     }
 
-    VariableGroupVectors DomainSplitter::performEvenSplit(const shared_ptr <Flaw> &flaw,
-                                                          const shared_ptr <DomainAbstraction> &currentAbstraction) {
+    VariableGroupVectors DomainSplitter::performRandomUniformSplit(const shared_ptr <Flaw> &flaw,
+                                                                   const shared_ptr <DomainAbstraction> &currentAbstraction) {
         /*
          * Even-Split will put the missed fact into a new group, together with half of its old group (randomly).
          * This is done for every variable that has indeed a missed fact in its domain.
@@ -65,46 +64,41 @@ namespace domain_abstractions {
         VariableGroupVectors oldAbstraction = currentAbstraction->getAbstractDomains();
         VariableGroupVectors newAbstraction = oldAbstraction;
 
-        vector<int> stateValues = *(flaw->stateWhereFlawHappens);
+        vector<int> flawState = *(flaw->stateWhereFlawHappens);
         vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(
-                stateValues);
+                flawState);
 
         shared_ptr<vector<FactPair>> missedFacts = flaw->missedFacts;
-        /*if (log.is_at_least_debug()) {
-            log << "--Missed facts: " << *missedFacts << endl;
-            log << "Real State where flaw happened: " << stateValues << endl;
-            log << "--Abstract State Where Flaw happened: " << abstractStateWhereFlawHappened << endl;
-            for (const auto& factPair: *missedFacts) {
-                log << "Group Facts for missed var(in real space)" << factPair.var << ": "<< currentAbstraction->getVariableGroupFacts(factPair.var, abstractStateWhereFlawHappened.at(factPair.var)) << endl;
-            }
-        }*/
+
         assert(!missedFacts->empty());
         // loop over Missed Facts
         for (auto factPair: *missedFacts) {
             // Get and Copy domain abstraction of affected variable
-            VariableGroupVector oldVariableAbstractDomain = oldAbstraction.at(factPair.var);
+            VariableGroupVector oldVariableAbstractDomain = oldAbstraction[factPair.var];
             VariableGroupVector newVariableAbstractDomain = oldVariableAbstractDomain;
             // determine groupNr for new group == domainSize(== max group num + 1)
             int domainSize = currentAbstraction->getDomainSize(factPair.var);
+
             // position of missed fact inside variable domain, also change it immediately
             newVariableAbstractDomain[factPair.value] = domainSize;
 
             // change half of old group (-1)
-            int oldGroupNr = oldVariableAbstractDomain.at(factPair.value);
+            int oldGroupNr = oldVariableAbstractDomain[factPair.value];
             vector<FactPair> oldGroupFacts = currentAbstraction->getVariableGroupFacts(factPair.var,
                                                                                                 oldGroupNr);
+            // candidates for random change in group
+            vector<int> choice_positions;
             int oldGroupSize = (int) oldGroupFacts.size();
-            int changed = 1;
             int toChange = oldGroupSize / 2;
             for (auto oldGroupFact: oldGroupFacts) {
                 if (oldGroupFact == factPair) {
                     continue;
                 }
-                if (changed >= toChange) {
-                    break;
-                }
-                newVariableAbstractDomain[oldGroupFact.value] = domainSize + 1;
-                changed++;
+                choice_positions.push_back(oldGroupFact.value);
+            }
+            // now get random selection and change
+            for (int idx: randomPickFromList(toChange, choice_positions)) {
+                newVariableAbstractDomain[idx] = domainSize;
             }
             // Write new domain abstraction for variable to result (Due to downward-formalism just one missed fact per variable can exist)
             newAbstraction[factPair.var] = newVariableAbstractDomain;

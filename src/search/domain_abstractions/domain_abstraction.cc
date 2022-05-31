@@ -210,22 +210,22 @@ namespace domain_abstractions {
         vector <shared_ptr<DomainAbstractedState>> predecessors;
         // loop over operators and check if postconditions are fulfilled
         for (int operatorIndex = 0; operatorIndex < transition_system->get_num_operators(); operatorIndex++) {
-            vector <pair<int, int>> postFacts = abstractOperatorPostconditions.at(operatorIndex);
+            vector <pair<int, int>> postFacts = abstractOperatorPostconditions[operatorIndex];
             // If post-facts not fulfilled -> operator could not have lead to this state -> continue with next operator
             if (abstractStateFulfillsAbstractFacts(state->getGroupsAssignment(), postFacts)) {
                 // precond-vars are fixed, others are free to choose
                 vector <vector<int>> consideredGroupsPerVar(originalTask.get_variables().size(), vector < int > ());
-                for (auto &precondFact: abstractOperatorPreconditions.at(operatorIndex)) {
-                    consideredGroupsPerVar.at(precondFact.first).push_back(precondFact.second);
+                for (auto &precondFact: abstractOperatorPreconditions[operatorIndex]) {
+                    consideredGroupsPerVar[precondFact.first].push_back(precondFact.second);
                 }
                 // add all groups for variables that are not in preconditions
                 for (int varIndex = 0; varIndex < (int) consideredGroupsPerVar.size(); varIndex++) {
-                    if (consideredGroupsPerVar.at(varIndex).empty()) {
-                        int maxGroupNum = domainSizes.at(varIndex) - 1;
+                    if (consideredGroupsPerVar[varIndex].empty()) {
+                        int maxGroupNum = domainSizes[varIndex] - 1;
                         assert(maxGroupNum >= 0);
                         vector<int> tmpVec;
                         for (int i = 0; i <= maxGroupNum; i++) {
-                            consideredGroupsPerVar.at(varIndex).push_back(i);
+                            consideredGroupsPerVar[varIndex].push_back(i);
                         }
                     }
                 }

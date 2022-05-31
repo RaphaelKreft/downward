@@ -64,7 +64,7 @@ namespace domain_abstractions {
                 return INF;
             }
         } else {
-            return heuristicValues.at(hMapIndex);
+            return heuristicValues[hMapIndex];
         }
     }
 
@@ -145,21 +145,31 @@ namespace domain_abstractions {
          * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0
          * */
         // create null vectors for all domains
-        VariableGroupVectors nullInit;
-        VariablesProxy vars = originalTask.get_variables();
-        for (int varIndex = 0; varIndex < (int) vars.size(); varIndex++) {
-            nullInit.push_back(vector<int>(vars[varIndex].get_domain_size(), 0));
+        VariableGroupVectors domains;
+        // loop over every variable and create domain split
+        for (VariableProxy var: originalTask.get_variables()) {
+            VariableGroupVector varVec;
+            varVec.clear();
+            // loop over variable values and check for every one of it if it is contained in goal state
+            for (int i = 0; i < var.get_domain_size(); i++) {
+                FactProxy fact = var.get_fact(i);
+                bool isGoal = false;
+                // Check whether variable value is in goal facts
+                for (FactProxy goalFact: originalTask.get_goals()) {
+                    if (goalFact == fact) {
+                        varVec.push_back(1);
+                        isGoal = true;
+                        break;
+                    }
+                }
+                if (!isGoal) {
+                    varVec.push_back(0);
+                }
+            }
+            // Add domain group mapping for single variable to list
+            domains.push_back(varVec);
         }
-        // make artificial Flaw out of goal facts
-        shared_ptr<Flaw> tmpFlaw = make_shared<Flaw>(vector<int>(),
-                                                     make_shared<vector<FactPair>>(transitionSystem->getGoalFacts()));
-        // create abstraction Instance
-        shared_ptr<DomainAbstraction> initAbstraction = make_shared<DomainAbstraction>(nullInit, log, originalTask,
-                                                                                       transitionSystem, max_states);
-        // Split and reload instance
-        VariableGroupVectors domains = domainSplitter.split(tmpFlaw, initAbstraction);
-        initAbstraction->reload(domains);
-        return initAbstraction;
+        return make_shared<DomainAbstraction>(domains, log, originalTask, transitionSystem, max_states);
     }
 
     shared_ptr <Trace> HeuristicBasis::cegarFindOptimalTrace(const shared_ptr <DomainAbstraction> &currentAbstraction) {
@@ -316,6 +326,7 @@ namespace domain_abstractions {
         // 1. Create All possible goal states (In Abstract State Space) and add them to openList
         for (const auto &goalState: abstraction->getAbstractGoalStates()) {
             openList.push(goalState);
+            heuristicValues[goalState->get_id()] = 0;
         }
         abstraction->generateAbstractTransitionSystem();
         // 2. Run Dijkstras Algorithm for backward search from every goal
@@ -324,14 +335,23 @@ namespace domain_abstractions {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
 
-            if (heuristicValues.at(nextState->get_id()) < nextState->getGValue()) {
+            int old_g = nextState->getGValue();
+            long long old_id = nextState->get_id();
+            const int curr_g = heuristicValues[old_id];
+            if (curr_g < old_g) {
                 continue;
             }
+
             for (const auto& predecessor: abstraction->getPredecessors(nextState)) {
                 // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
-                assert(predecessor->get_id() < (int) heuristicValues.size());
-                if (predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
-                    heuristicValues.at(predecessor->get_id()) = predecessor->getGValue();
+                int pred_cost = predecessor->getGValue();
+                assert(pred_cost >= 0);
+                int succ_g = (pred_cost == INF) ? INF: pred_cost;
+                assert(succ_g >= 0);
+                long long succ_id = predecessor->get_id();
+
+                if (succ_g < heuristicValues[succ_id]) {
+                    heuristicValues[succ_id] = succ_g;
                     openList.push(predecessor);
                 }
             }

@@ -26,7 +26,7 @@ namespace domain_abstractions {
         VariableGroupVectors variableGroupVectors; // group mapping
         std::vector<long long> nValuesForHash; // NValues need to compute perfect hash function for h-value lookup
         std::vector<int> operatorCosts; // for faster operator cost access
-        std::vector<int> domainSizes; // store num groups/domain size per variable. Used to get rid of max_elementops
+        std::vector<int> domainSizes; // store num groups/domain size per variable. Used to get rid of max_element-ops
         long long numAbstractStates{0};
         int max_states;
 
