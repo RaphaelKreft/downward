@@ -11,6 +11,8 @@ namespace domain_abstractions {
 
     std::vector<int> randomPickFromList(int numElements, std::vector<int> toChooseFrom);
 
+    int randIntFromRange(int min, int max);
+
 }
 
 

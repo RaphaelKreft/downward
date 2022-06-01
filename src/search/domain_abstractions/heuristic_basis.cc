@@ -141,32 +141,12 @@ namespace domain_abstractions {
 
     shared_ptr <DomainAbstraction> HeuristicBasis::cegarTrivialAbstraction(TaskProxy originalTask) {
         /*
-         * This Method takes the original task and Creates a Domain Abstraction Object where the domains are built on
-         * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0
+         * This Method takes the original task and Creates a Domain Abstraction Object where the domains are all 0
          * */
         // create null vectors for all domains
         VariableGroupVectors domains;
-        // loop over every variable and create domain split
         for (VariableProxy var: originalTask.get_variables()) {
-            VariableGroupVector varVec;
-            varVec.clear();
-            // loop over variable values and check for every one of it if it is contained in goal state
-            for (int i = 0; i < var.get_domain_size(); i++) {
-                FactProxy fact = var.get_fact(i);
-                bool isGoal = false;
-                // Check whether variable value is in goal facts
-                for (FactProxy goalFact: originalTask.get_goals()) {
-                    if (goalFact == fact) {
-                        varVec.push_back(1);
-                        isGoal = true;
-                        break;
-                    }
-                }
-                if (!isGoal) {
-                    varVec.push_back(0);
-                }
-            }
-            // Add domain group mapping for single variable to list
+            VariableGroupVector varVec(var.get_domain_size(), 0);
             domains.push_back(varVec);
         }
         return make_shared<DomainAbstraction>(domains, log, originalTask, transitionSystem, max_states);

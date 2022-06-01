@@ -21,7 +21,6 @@ namespace domain_abstractions {
             return performRandomUniformSplit(flaw, currentAbstraction);
         } else {
             // default fallback if unknown
-            //log << "CEGAR -- Split: using fallback Method(Hard-Split) since given method not specified!" << endl;
             return performSingleValueSplit(flaw, currentAbstraction);
         }
     }
@@ -32,8 +31,7 @@ namespace domain_abstractions {
         /*
          * Split missed fact from rest of facts in same group for every variable (that has missed facts in their domain)
          * */
-        VariableGroupVectors oldAbstraction = currentAbstraction->getAbstractDomains();
-        VariableGroupVectors newAbstraction = oldAbstraction;
+        VariableGroupVectors newAbstraction = currentAbstraction->getAbstractDomains();
 
         //vector<int> stateValues = flaw->getStateWhereFlawHappensCopy();
         vector<int> stateValues = *(flaw->stateWhereFlawHappens);
@@ -44,14 +42,36 @@ namespace domain_abstractions {
         assert(!missedFacts->empty());
         // loop over variables and their domains
         for (auto factPair: *missedFacts) {
-            VariableGroupVector oldVariableAbstractDomain = oldAbstraction.at(factPair.var);
-            VariableGroupVector newVariableAbstractDomain = oldVariableAbstractDomain;
             int domainSize = currentAbstraction->getDomainSize(factPair.var);
             // just give missed-fact a new group
-            newVariableAbstractDomain[factPair.value] = domainSize;
-            newAbstraction[factPair.var] = newVariableAbstractDomain;
+            newAbstraction[factPair.var][factPair.value] = domainSize;
         }
-        assert(newAbstraction.size() == oldAbstraction.size());
+        return newAbstraction;
+    }
+
+    VariableGroupVectors
+    DomainSplitter::performSingleValueSplitOneFact(const shared_ptr <Flaw> &flaw,
+                                            const shared_ptr <DomainAbstraction> &currentAbstraction) {
+        /*
+         * Split missed fact from rest of facts in same group for every variable (that has missed facts in their domain)
+         * */
+        VariableGroupVectors newAbstraction = currentAbstraction->getAbstractDomains();
+
+        //vector<int> stateValues = flaw->getStateWhereFlawHappensCopy();
+        vector<int> stateValues = *(flaw->stateWhereFlawHappens);
+        vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(
+                stateValues);
+        // choose one random missed fact
+        shared_ptr<vector<FactPair>> missedFacts = flaw->missedFacts;
+        int random_idx = randIntFromRange(0, (int) missedFacts->size());
+        assert(random_idx < (int) missedFacts->size());
+        assert(random_idx >= 0);
+        // loop over variables and their domains
+        FactPair factPair = missedFacts->at(random_idx);
+        int domainSize = currentAbstraction->getDomainSize(factPair.var);
+        // just give missed-fact a new group
+        newAbstraction[factPair.var][factPair.value] = domainSize;
+
         return newAbstraction;
     }
 
@@ -61,8 +81,7 @@ namespace domain_abstractions {
          * Even-Split will put the missed fact into a new group, together with half of its old group (randomly).
          * This is done for every variable that has indeed a missed fact in its domain.
          * */
-        VariableGroupVectors oldAbstraction = currentAbstraction->getAbstractDomains();
-        VariableGroupVectors newAbstraction = oldAbstraction;
+        VariableGroupVectors newAbstraction = currentAbstraction->getAbstractDomains();
 
         vector<int> flawState = *(flaw->stateWhereFlawHappens);
         vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(
@@ -73,17 +92,15 @@ namespace domain_abstractions {
         assert(!missedFacts->empty());
         // loop over Missed Facts
         for (auto factPair: *missedFacts) {
-            // Get and Copy domain abstraction of affected variable
-            VariableGroupVector oldVariableAbstractDomain = oldAbstraction[factPair.var];
-            VariableGroupVector newVariableAbstractDomain = oldVariableAbstractDomain;
             // determine groupNr for new group == domainSize(== max group num + 1)
             int domainSize = currentAbstraction->getDomainSize(factPair.var);
 
             // position of missed fact inside variable domain, also change it immediately
-            newVariableAbstractDomain[factPair.value] = domainSize;
+            int oldGroupNr = newAbstraction[factPair.var][factPair.value];
+            newAbstraction[factPair.var][factPair.value] = domainSize;
+            assert(newAbstraction[factPair.var][factPair.value] != oldGroupNr);
 
             // change half of old group (-1)
-            int oldGroupNr = oldVariableAbstractDomain[factPair.value];
             vector<FactPair> oldGroupFacts = currentAbstraction->getVariableGroupFacts(factPair.var,
                                                                                                 oldGroupNr);
             // candidates for random change in group
@@ -98,12 +115,9 @@ namespace domain_abstractions {
             }
             // now get random selection and change
             for (int idx: randomPickFromList(toChange, choice_positions)) {
-                newVariableAbstractDomain[idx] = domainSize;
+                newAbstraction[factPair.var][idx] = domainSize;
             }
-            // Write new domain abstraction for variable to result (Due to downward-formalism just one missed fact per variable can exist)
-            newAbstraction[factPair.var] = newVariableAbstractDomain;
         }
-        assert(newAbstraction.size() == oldAbstraction.size());
         return newAbstraction;
     }
 }

@@ -41,6 +41,15 @@ namespace domain_abstractions {
         return resultingStates;
     }
 
+    int randIntFromRange(int min, int max) {
+        // returns a randint from  range min-max including min/max
+        std::random_device rd;     // only used once to initialise (seed) engine
+        std::mt19937 rng(rd());    // random-number engine used (Mersenne-Twister in this case)
+        std::uniform_int_distribution<int> uni(min,max);
+
+        return uni(rng);
+    }
+
     /*std::vector<int> iRange(int start, int end) {
         std::vector<int> range;
         for (int i = start; i <= end; i++) {

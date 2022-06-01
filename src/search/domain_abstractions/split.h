@@ -38,10 +38,15 @@ namespace domain_abstractions {
             }
         }
 
+
+    private:
+
         static VariableGroupVectors performSingleValueSplit(const std::shared_ptr<Flaw> &flaw,
                                                             const std::shared_ptr<DomainAbstraction> &currentAbstraction);
 
-    private:
+        static VariableGroupVectors
+        performSingleValueSplitOneFact(const std::shared_ptr <Flaw> &flaw,
+                                       const std::shared_ptr <DomainAbstraction> &currentAbstraction);
 
         static VariableGroupVectors performRandomUniformSplit(const std::shared_ptr<Flaw> &flaw,
                                                        const std::shared_ptr<DomainAbstraction> &currentAbstraction);
