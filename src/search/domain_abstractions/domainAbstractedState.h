@@ -42,34 +42,10 @@ namespace domain_abstractions {
 
         std::shared_ptr<DomainAbstractedState> getParent();
 
-        static std::shared_ptr<Trace> extractSolution(std::shared_ptr<DomainAbstractedState> goal) {
-            /*
-             * When used as search nodes, this function can extract a trace out of DomainAbstractedStates
-             * DO NOT INSERT INIT STATE! -> trace length = pathlength -1
-             * */
-            std::shared_ptr<Trace> abstractSolutionTrace = std::make_shared<Trace>();
-            std::shared_ptr<DomainAbstractedState> currentState = std::move(goal);
-            // now loop over search nodes and construct
-            while (currentState->getParent() != nullptr) {
-                abstractSolutionTrace->emplace_front(
-                        Transition(currentState->get_operator_id(), currentState->get_id()));
-                currentState = currentState->getParent();
-                // TODO: Here an error was located
-            }
-            return abstractSolutionTrace;
-        }
+        static std::shared_ptr<Trace> extractSolution(std::shared_ptr<DomainAbstractedState> goal);
 
         static std::function<bool(std::shared_ptr<DomainAbstractedState>, std::shared_ptr<DomainAbstractedState>)>
-        getComparator() {
-            std::function<bool(std::shared_ptr<DomainAbstractedState>,
-                               std::shared_ptr<DomainAbstractedState>)> comparator = [](
-                    const std::shared_ptr<DomainAbstractedState> &left,
-                    const std::shared_ptr<DomainAbstractedState> &right) {
-                return (left->getGValue()) >
-                       (right->getGValue()); // TODO > < changed because weird c++ comparator logic
-            };
-            return comparator;
-        }
+        getComparator();
     };
 }
 

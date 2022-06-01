@@ -174,6 +174,7 @@ vector<int> compute_distances(
         assert(g <= old_g);
         if (g < old_g)
             continue;
+
         assert(utils::in_bounds(state_id, transitions));
         for (const Transition &transition : transitions[state_id]) {
             const int op_cost = costs[transition.op_id];

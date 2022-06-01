@@ -6,12 +6,13 @@
 #include "data_structures.h"
 #include "domain_abstraction.h"
 
+
 namespace domain_abstractions {
 
     // Enum, representing the options that exist on how to split Abstract Domains of DomainAbstraction
     enum class SplitMethod {
-        HARDSPLIT,  // new groups -> For every variable: fact that was part of flaw becomes a new group
-        EVENSPLIT   // new groups -> For every variable: fact that was part of flaw + fill up new group so that
+        SINGLEVALUESPLIT,  // new groups -> For every variable: fact that was part of flaw becomes a new group
+        RANDOMUNIFORMSPLIT   // new groups -> For every variable: fact that was part of flaw + fill up new group so that
         //               half of old group where fact was located is in new group and rest in old
     };
 
@@ -27,22 +28,28 @@ namespace domain_abstractions {
 
         // map string to ENUM
         static SplitMethod getEnumForString(const std::string &splitMethodSuggestion) {
-            if (splitMethodSuggestion == "HardSplit") {
-                return SplitMethod::HARDSPLIT;
-            } else if (splitMethodSuggestion == "EvenSplit") {
-                return SplitMethod::EVENSPLIT;
+            if (splitMethodSuggestion == "SingleValueSplit") {
+                return SplitMethod::SINGLEVALUESPLIT;
+            } else if (splitMethodSuggestion == "RandomUniformSplit") {
+                return SplitMethod::RANDOMUNIFORMSPLIT;
             } else {
                 // by default always use best known option (Now: hardsplit)
-                return SplitMethod::EVENSPLIT;
+                return SplitMethod::RANDOMUNIFORMSPLIT;
             }
         }
 
-    private:
-        VariableGroupVectors performHardSplit(const std::shared_ptr<Flaw> &flaw,
-                                              const std::shared_ptr<DomainAbstraction> &currentAbstraction);
 
-        VariableGroupVectors performEvenSplit(const std::shared_ptr<Flaw> &flaw,
-                                              const std::shared_ptr<DomainAbstraction> &currentAbstraction);
+    private:
+
+        static VariableGroupVectors performSingleValueSplit(const std::shared_ptr<Flaw> &flaw,
+                                                            const std::shared_ptr<DomainAbstraction> &currentAbstraction);
+
+        static VariableGroupVectors
+        performSingleValueSplitOneFact(const std::shared_ptr <Flaw> &flaw,
+                                       const std::shared_ptr <DomainAbstraction> &currentAbstraction);
+
+        static VariableGroupVectors performRandomUniformSplit(const std::shared_ptr<Flaw> &flaw,
+                                                       const std::shared_ptr<DomainAbstraction> &currentAbstraction);
     };
 
 }

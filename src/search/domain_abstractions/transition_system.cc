@@ -94,7 +94,7 @@ namespace domain_abstractions {
         vector<FactPair> missedFacts;
         //log << "loop over needed assignments" << endl;
         for (FactPair &pair: goalFacts) {
-            if (pair.value != currentState.at(pair.var)) {
+            if (pair.value != currentState[pair.var]) {
                 missedFacts.push_back(pair);
             }
         }

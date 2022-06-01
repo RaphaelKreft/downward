@@ -37,11 +37,13 @@ namespace domain_abstractions {
             log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;
         }
         // Create vector for Abstraction
-        heuristicValues = vector<int>(abstraction->getNumberOfAbstractStates(), INF);
+
 
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF) {
-            calculateHeuristicValues();
+            heuristicValues = calculateHeuristicValues();
+        } else {
+            heuristicValues = vector<int>(abstraction->getNumberOfAbstractStates(), INF);
         }
     }
 
@@ -64,7 +66,7 @@ namespace domain_abstractions {
                 return INF;
             }
         } else {
-            return heuristicValues.at(hMapIndex);
+            return heuristicValues[hMapIndex];
         }
     }
 
@@ -141,25 +143,15 @@ namespace domain_abstractions {
 
     shared_ptr <DomainAbstraction> HeuristicBasis::cegarTrivialAbstraction(TaskProxy originalTask) {
         /*
-         * This Method takes the original task and Creates a Domain Abstraction Object where the domains are built on
-         * basis of the goal variable values of first goal state. group num goal-fact-group  = 1, others = 0
+         * This Method takes the original task and Creates a Domain Abstraction Object where the domains are all 0
          * */
         // create null vectors for all domains
-        VariableGroupVectors nullInit;
-        VariablesProxy vars = originalTask.get_variables();
-        for (int varIndex = 0; varIndex < (int) vars.size(); varIndex++) {
-            nullInit.push_back(vector<int>(vars[varIndex].get_domain_size(), 0));
+        VariableGroupVectors domains;
+        for (VariableProxy var: originalTask.get_variables()) {
+            VariableGroupVector varVec(var.get_domain_size(), 0);
+            domains.push_back(varVec);
         }
-        // make artificial Flaw out of goal facts
-        shared_ptr<Flaw> tmpFlaw = make_shared<Flaw>(vector<int>(),
-                                                     make_shared<vector<FactPair>>(transitionSystem->getGoalFacts()));
-        // create abstraction Instance
-        shared_ptr<DomainAbstraction> initAbstraction = make_shared<DomainAbstraction>(nullInit, log, originalTask,
-                                                                                       transitionSystem, max_states);
-        // Split and reload instance
-        VariableGroupVectors domains = domainSplitter.split(tmpFlaw, initAbstraction);
-        initAbstraction->reload(domains);
-        return initAbstraction;
+        return make_shared<DomainAbstraction>(domains, log, originalTask, transitionSystem, max_states);
     }
 
     shared_ptr <Trace> HeuristicBasis::cegarFindOptimalTrace(const shared_ptr <DomainAbstraction> &currentAbstraction) {
@@ -303,38 +295,54 @@ namespace domain_abstractions {
         return INF;
     }
 
-    void HeuristicBasis::calculateHeuristicValues() {
+    vector<int> HeuristicBasis::calculateHeuristicValues() {
         /*
          * Calculates the heuristic values by using Dijkstra Algorithm to calculate Distances from goal states
          * in the Abstract State Space induced by the created DomainAbstraction "abstraction". Therefor use real statespace
          * and convert to abstract one on fly(abstractions keep transitions). We can assume that there is only one goal state
          */
         // perform backward-Search from Goal using Dijkstras Algorithm
+        vector<int> newHeuristicValues(abstraction->getNumberOfAbstractStates(), INF);
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         log << "Now generate Abstract Goal States.." << endl;
         // 1. Create All possible goal states (In Abstract State Space) and add them to openList
         for (const auto &goalState: abstraction->getAbstractGoalStates()) {
             openList.push(goalState);
+            newHeuristicValues[goalState->get_id()] = 0;
+            log << goalState->getGroupsAssignment() << endl;
         }
+        log << "got " << openList.size() << " abstract goal-states" << endl;
         abstraction->generateAbstractTransitionSystem();
+
         // 2. Run Dijkstras Algorithm for backward search from every goal
         log << "Now run backward search..." << endl;
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
 
-            if (heuristicValues.at(nextState->get_id()) < nextState->getGValue()) {
+            int old_g = nextState->getGValue();
+            long long old_id = nextState->get_id();
+            const int curr_g = newHeuristicValues[old_id];
+            if (curr_g < old_g) {
                 continue;
             }
+
             for (const auto& predecessor: abstraction->getPredecessors(nextState)) {
                 // if not in H-values already or we have found a shorter way than we have currently in heuristic values add to openList
-                assert(predecessor->get_id() < (int) heuristicValues.size());
-                if (predecessor->getGValue() < heuristicValues.at(predecessor->get_id())) {
-                    heuristicValues.at(predecessor->get_id()) = predecessor->getGValue();
+                int pred_cost = predecessor->getGValue();
+                assert(pred_cost >= 0);
+                int succ_g = (pred_cost == INF) ? INF: pred_cost;
+                assert(succ_g >= 0);
+                long long succ_id = predecessor->get_id();
+
+                if (succ_g < newHeuristicValues[succ_id]) {
+                    newHeuristicValues[succ_id] = succ_g;
                     openList.push(predecessor);
                 }
             }
         }
+
+        return newHeuristicValues;
     }
 }
