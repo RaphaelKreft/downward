@@ -63,7 +63,7 @@ namespace domain_abstractions {
                 stateValues);
         // choose one random missed fact
         shared_ptr<vector<FactPair>> missedFacts = flaw->missedFacts;
-        int random_idx = randIntFromRange(0, (int) missedFacts->size());
+        int random_idx = randIntFromRange(0, (int) missedFacts->size()-1);
         assert(random_idx < (int) missedFacts->size());
         assert(random_idx >= 0);
         // loop over variables and their domains

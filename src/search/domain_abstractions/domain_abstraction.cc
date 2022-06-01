@@ -208,41 +208,55 @@ namespace domain_abstractions {
          *
          * */
         vector <shared_ptr<DomainAbstractedState>> predecessors;
+        int num_variables = (int) originalTask.get_variables().size();
+        vector<int> stateValues = state->getGroupsAssignment();
+
         // loop over operators and check if postconditions are fulfilled
         for (int operatorIndex = 0; operatorIndex < transition_system->get_num_operators(); operatorIndex++) {
             vector <pair<int, int>> postFacts = abstractOperatorPostconditions[operatorIndex];
             // If post-facts not fulfilled -> operator could not have lead to this state -> continue with next operator
-            if (abstractStateFulfillsAbstractFacts(state->getGroupsAssignment(), postFacts)) {
-                // precond-vars are fixed, others are free to choose
-                vector <vector<int>> consideredGroupsPerVar(originalTask.get_variables().size(), vector < int > ());
+            if (abstractStateFulfillsAbstractFacts(stateValues, postFacts)) {
+                // precond-vars are fixed, overwritten by post-cond can be chosen arbitrarely others as in post state
+                vector <vector<int>> consideredGroupsPerVar(num_variables, vector < int > ());
+                // precond facts fxed
                 for (auto &precondFact: abstractOperatorPreconditions[operatorIndex]) {
                     consideredGroupsPerVar[precondFact.first].push_back(precondFact.second);
                 }
-                // add all groups for variables that are not in preconditions
-                for (int varIndex = 0; varIndex < (int) consideredGroupsPerVar.size(); varIndex++) {
-                    if (consideredGroupsPerVar[varIndex].empty()) {
-                        int maxGroupNum = domainSizes[varIndex] - 1;
-                        assert(maxGroupNum >= 0);
+                // post but not in pre -> all groups
+                for (auto &postFact: postFacts) {
+                    if (consideredGroupsPerVar[postFact.first].empty()) {
+                        int maxGroupNum = domainSizes[postFact.first] - 1;
                         vector<int> tmpVec;
                         for (int i = 0; i <= maxGroupNum; i++) {
-                            consideredGroupsPerVar[varIndex].push_back(i);
+                            consideredGroupsPerVar[postFact.first].push_back(i);
                         }
+                    }
+                }
+                // add state-value for vars that are neither in pre nor post
+                for (int varIndex = 0; varIndex < (int) consideredGroupsPerVar.size(); varIndex++) {
+                    if (consideredGroupsPerVar[varIndex].empty()) {
+                        consideredGroupsPerVar[varIndex].push_back(stateValues[varIndex]);
                     }
                 }
 
                 // Make DomainAbstractedState objects from found predecessor states
-                for (auto &goalState: groupCombinations(consideredGroupsPerVar)) {
-                    shared_ptr<DomainAbstractedState> goalSearchNode = make_shared<DomainAbstractedState>(goalState,
-                                                                                                          abstractStateLookupIndex(
-                                                                                                                  goalState));
-                    goalSearchNode->setGValue(
+                for (auto &precondSate: groupCombinations(consideredGroupsPerVar)) {
+                    // Ignore if we have a self-loop
+                    if (precondSate == stateValues) {
+                        continue;
+                    }
+                    shared_ptr<DomainAbstractedState> predecessorNode = make_shared<DomainAbstractedState>(precondSate,
+                                                                                                           abstractStateLookupIndex(
+                                                                                                                   precondSate));
+                    predecessorNode->setGValue(
                             state->getGValue() + operatorCosts[operatorIndex]);
-                    predecessors.push_back(goalSearchNode);
+                    predecessors.push_back(predecessorNode);
                 }
             }
         }
         return predecessors;
     }
+
 
     bool DomainAbstraction::abstractStateFulfillsAbstractFacts(vector<int> abstractState,
                                                                const vector <pair<int, int>> &abstractFacts) {
@@ -316,7 +330,7 @@ namespace domain_abstractions {
         log << "generate operator pre/post conds in abstract space..." << endl;
         for (int op_index = 0; op_index < transition_system->get_num_operators(); op_index++) {
             vector < FactPair > preCondsReal = transition_system->get_precondition_assignments_for_operator(op_index);
-            vector < FactPair > postCondsReal = transition_system->get_precondition_assignments_for_operator(op_index);
+            vector < FactPair > postCondsReal = transition_system->get_postcondition_assignments_for_operator(op_index);
 
             vector <pair<int, int>> tmpVecPre;
             vector <pair<int, int>> tmpVecPost;
