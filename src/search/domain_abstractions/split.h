@@ -50,6 +50,9 @@ namespace domain_abstractions {
 
         static VariableGroupVectors performRandomUniformSplit(const std::shared_ptr<Flaw> &flaw,
                                                        const std::shared_ptr<DomainAbstraction> &currentAbstraction);
+
+        static VariableGroupVectors performRandomUniformSplitOneFact(const std::shared_ptr <Flaw> &flaw,
+                                         const std::shared_ptr <DomainAbstraction> &currentAbstraction);
     };
 
 }
