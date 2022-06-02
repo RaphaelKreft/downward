@@ -45,7 +45,7 @@ namespace domain_abstractions {
     protected:
         std::shared_ptr<DomainAbstraction> createAbstraction(TaskProxy originalTask);
 
-        std::vector<int> calculateHeuristicValues();
+        void calculateHeuristicValues();
 
         bool cegarShouldTerminate();
 
