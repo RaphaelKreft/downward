@@ -221,7 +221,7 @@ namespace domain_abstractions {
                 shared_ptr<vector<FactPair>> missedF(new vector<FactPair>(missedPreconditionFacts));
                 //log << "--> Needed Fact Pairs would have been: " << transitionSystem->get_precondition_assignments_for_operator(nextTransition.op_id) << endl;
                 //log << " --> Precondition Flaw at transition " << nextTransition << endl;
-                return make_shared<Flaw>(currState, missedF);
+                return make_shared<Flaw>(currState, missedF, false);
             }
             // if we have no missed facts we can apply operator and continue to follow the trace
             currState = transitionSystem->applyOperator(currState, nextTransition.op_id);
@@ -234,7 +234,7 @@ namespace domain_abstractions {
         if (!missedGoalFacts.empty()) {
             log << "--> Goal Fact violation Flaw!" << endl;
             shared_ptr<vector<FactPair>> missedGF(new vector<FactPair>(missedGoalFacts));
-            return make_shared<Flaw>(currState, missedGF);
+            return make_shared<Flaw>(currState, missedGF, true);
         }
         log << "--> No Flaw!" << endl;
         return nullptr;

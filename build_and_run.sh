@@ -15,6 +15,6 @@ else
     then
       ./fast-downward.py --debug ../downward-benchmarks/transport-opt08-strips/p01.pddl --search "astar(domain_abstraction(precalculation=true))"
     else
-      ./fast-downward.py --debug ../downward-benchmarks/transport-opt08-strips/p01.pddl --search "astar(domain_abstraction())"
+      ./fast-downward.py --debug ../downward-benchmarks/transport-opt08-strips/p01.pddl --search "astar(domain_abstraction(split_method=UniformRandomSplit, max_states=2048))"
   fi
 fi
