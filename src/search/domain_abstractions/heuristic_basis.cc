@@ -24,25 +24,34 @@ namespace domain_abstractions {
             1. generate abstraction using CEGAR for DomainAbstractions
             2. calculate the heuristic values for that Abstraction
         */
-
+        utils::Timer preCalcTimer(false);
+        utils::Timer abstractionConstructionTimer(false);
         // CONSTRUCT ABSTRACTION
         if (log.is_at_least_normal()) {
-            log << "Now construct abstraction..." << endl;
+            log << "Construct abstraction..." << endl;
         }
+        abstractionConstructionTimer.resume();
         abstraction = createAbstraction(originalTask);
+        abstractionConstructionTimer.stop();
 
-        if (log.is_at_least_normal()) {
-            log << "Abstraction Construction finished!" << endl;
-            log << "Final Abstraction: " << abstraction->getAbstractDomains() << endl;
-            log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;
-        }
         // Create vector for heuristic values
-
         heuristicValues = vector<int>(abstraction->getNumberOfAbstractStates(), INF);
 
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF) {
+            if (log.is_at_least_normal()) {
+                log << "Precalculate heuristic values..." << endl;
+            }
+            preCalcTimer.resume();
             calculateHeuristicValues();
+            preCalcTimer.stop();
+        }
+
+        if (log.is_at_least_normal()) {
+            log << "Final Abstraction: " << abstraction->getAbstractDomains() << endl;
+            log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;
+            log << "Time for abstraction construction: " << abstractionConstructionTimer << endl;
+            log << "Time for precalculation of heuristic-values: " << preCalcTimer << endl;
         }
     }
 
@@ -79,8 +88,9 @@ namespace domain_abstractions {
             log << "CEGAR: create initial trivial abstraction.." << endl;
         }
         shared_ptr<DomainAbstraction> currentAbstraction = cegarTrivialAbstraction(originalTask);
-        log << "Initial Abstraction: " << currentAbstraction->getAbstractDomains() << endl;
+
         if (log.is_at_least_normal()) {
+            log << "Initial Abstraction: " << currentAbstraction->getAbstractDomains() << endl;
             log << "CEGAR: initial abstraction created, now run refinement loop..." << endl;
         }
         int rounds = 0;
@@ -100,18 +110,15 @@ namespace domain_abstractions {
             if (!f) {
                 if (log.is_at_least_normal()) {
                     log << "CEGAR round " << rounds << ": Found concrete solution during refinement!!!" << endl;
-                    // maybe show solution??
-                    for (auto &transition: *t) {
-                        log << transition.op_id << ",";
-                    }
-                    log << endl;
                 }
                 break;
             }
             // If a Flaw has been found we need to refine the Abstraction
             cegarRefine(f, currentAbstraction);
         }
-        log << "#CEGAR Loop Iterations: " << rounds << endl;
+        if (log.is_at_least_normal()) {
+            log << "#CEGAR Loop Iterations: " << rounds << endl;
+        }
         return currentAbstraction;
     }
 
@@ -217,9 +224,10 @@ namespace domain_abstractions {
                                                                                               nextTransition);
             // when missed-facts is not empty we have a precondition flaw -> preconditions not fulfilled in curr  state
             if (!missedPreconditionFacts.empty()) {
+                if (log.is_at_least_debug()) {
+                    log << "--> Precondition Violation Flaw!" << endl;
+                }
                 shared_ptr<vector<FactPair>> missedF(new vector<FactPair>(missedPreconditionFacts));
-                //log << "--> Needed Fact Pairs would have been: " << transitionSystem->get_precondition_assignments_for_operator(nextTransition.op_id) << endl;
-                //log << " --> Precondition Flaw at transition " << nextTransition << endl;
                 return make_shared<Flaw>(currState, missedF, false);
             }
             // if we have no missed facts we can apply operator and continue to follow the trace
@@ -231,11 +239,12 @@ namespace domain_abstractions {
         vector<FactPair> missedGoalFacts = transitionSystem->isGoal(currState);
         //log << "received missed goal facts..." << endl;
         if (!missedGoalFacts.empty()) {
-            log << "--> Goal Fact violation Flaw!" << endl;
+            if (log.is_at_least_debug()) {
+                log << "--> Goal Fact violation Flaw!" << endl;
+            }
             shared_ptr<vector<FactPair>> missedGF(new vector<FactPair>(missedGoalFacts));
             return make_shared<Flaw>(currState, missedGF, true);
         }
-        log << "--> No Flaw!" << endl;
         return nullptr;
     }
 
@@ -303,18 +312,21 @@ namespace domain_abstractions {
         // perform backward-Search from Goal using Dijkstras Algorithm
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
-        log << "Now generate Abstract Goal States.." << endl;
         // 1. Create All possible goal states (In Abstract State Space) and add them to openList
         for (const auto &goalState: abstraction->getAbstractGoalStates()) {
             openList.push(goalState);
             heuristicValues[goalState->get_id()] = 0;
-            log << goalState->getGroupsAssignment() << endl;
+            //log << goalState->getGroupsAssignment() << endl;
         }
-        log << "got " << openList.size() << " abstract goal-states" << endl;
+
+        if (log.is_at_least_debug()) {
+            log << "got " << openList.size() << " abstract goal-states" << endl;
+            log << "Now run backward search using Dijkstras Algorithm..." << endl;
+        }
+
         abstraction->generateAbstractTransitionSystem();
 
         // 2. Run Dijkstras Algorithm for backward search from every goal
-        log << "Now run backward search..." << endl;
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();

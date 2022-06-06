@@ -26,7 +26,7 @@ namespace domain_abstractions {
         // calculate max possible index
         long long maxIndex = 0;
         for (int i = 0; i < (int) newAbstraction.size(); i++) {
-            maxIndex += (newValues.at(i) * (newDomainSizes.at(i) - 1));
+            maxIndex += (newValues[i] * (newDomainSizes[i]- 1));
         }
         if (maxIndex < 0 || maxIndex > max_states) {
             //keep old Abstraction
@@ -78,7 +78,6 @@ namespace domain_abstractions {
         /*
          * Function that returns the facts(variable assignments) for a specific variable and group.
          * */
-        // get Variable proxy for specific variable
         return variableGroupFacts[varIndex][groupNumber];
     }
 
@@ -130,7 +129,7 @@ namespace domain_abstractions {
             // loop over groups in abstract domain for current variable v_i
             for (int j = 0; j <= i - 1; j++) {
                 VariableGroupVector varGroupMapping = newAbstraction[j];
-                int numGroups = newDomainSizes.at(j);
+                int numGroups = newDomainSizes[j];
                 assert(numGroups > 0);
                 newNValuesForHash.at(i) *= numGroups;
             }
@@ -161,7 +160,7 @@ namespace domain_abstractions {
             vector < FactPair > preconditionsForOperator = transition_system->get_precondition_assignments_for_operator(
                     operatorIndex);
 
-            if (groupAssignmentFulfillsFacts(state->getGroupsAssignment(), preconditionsForOperator)) {
+            if (groupAssignmentFulfillsFacts(state->getGroupsAssignment(), preconditionsForOperator)) { // Todo: use precaculation of abstract preconditions
                 vector < FactPair >
                 postconditionsForOperator = transition_system->get_postcondition_assignments_for_operator(
                         operatorIndex);
@@ -169,7 +168,7 @@ namespace domain_abstractions {
                 VariableGroupVector successorGroupMapping(state->getGroupsAssignment());
                 //successorGroupMapping.reserve(currentState.size());
                 for (const FactPair &fact: postconditionsForOperator) {
-                    successorGroupMapping.at(fact.var) = getGroupForFact(fact);
+                    successorGroupMapping[fact.var] = getGroupForFact(fact);
                 }
 
                 long long abstractStateIndex = abstractStateLookupIndex(successorGroupMapping);
@@ -184,10 +183,10 @@ namespace domain_abstractions {
                     successorState->setGValue(newGValue);
                     alreadyFound.insert(
                             pair<long long, shared_ptr<DomainAbstractedState>>(abstractStateIndex, successorState));
-                } else if (newGValue < alreadyFound.at(abstractStateIndex)->getGValue()) {
+                } else if (newGValue < alreadyFound[abstractStateIndex]->getGValue()) {
                     // we found a cheaper operator to reach the same successor!
-                    alreadyFound.at(abstractStateIndex)->setGValue(newGValue);
-                    alreadyFound.at(abstractStateIndex)->set_operator_id(operatorIndex);
+                    alreadyFound[abstractStateIndex]->setGValue(newGValue);
+                    alreadyFound[abstractStateIndex]->set_operator_id(operatorIndex);
                 }
             }
         }
@@ -289,21 +288,21 @@ namespace domain_abstractions {
          * Returns All possible Abstract goal states (fix goal-facts but vary group nums for remaining variables)
          * */
         vector <shared_ptr<DomainAbstractedState>> goalStates;
-        vector <vector<int>> consideredGroupsPerVar(originalTask.get_variables().size(), vector < int > ());
+        vector <vector<int>> consideredGroupsPerVar(domainSizes.size(), vector < int > ());
         // loop through variables and check if goal group exists
-        for (int varIndex = 0; varIndex < (int) originalTask.get_initial_state().size(); varIndex++) {
+        for (int varIndex = 0; varIndex < (int) domainSizes.size(); varIndex++) {
             // check if we have goal group for this variable
             int lookupVal = transition_system->lookup_value(goal_facts, varIndex);
             // if we found var we have a goal group
             if (lookupVal != -1) {
-                int goalGroup = variableGroupVectors.at(varIndex).at(lookupVal);
-                consideredGroupsPerVar.at(varIndex).push_back(goalGroup);
+                int goalGroup = variableGroupVectors[varIndex][lookupVal];
+                consideredGroupsPerVar[varIndex].push_back(goalGroup);
             } else {
                 // else all groups for this variable can be goal states!
-                int maxGroupNum = domainSizes.at(varIndex) - 1;
+                int maxGroupNum = domainSizes[varIndex] - 1;
                 assert(maxGroupNum >= 0);
                 for (int i = 0; i <= maxGroupNum; i++) {
-                    consideredGroupsPerVar.at(varIndex).push_back(i);
+                    consideredGroupsPerVar[varIndex].push_back(i);
                 }
             }
         }

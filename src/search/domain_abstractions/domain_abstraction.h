@@ -32,6 +32,7 @@ namespace domain_abstractions {
 
         // precalced for every reload for performance reasons
         std::vector<std::vector<std::vector<FactPair>>> variableGroupFacts; // for each variable, for each group the vector of FactPairs is stored
+        std::vector<std::vector<int>> operatorsApplicablePerAbstractState;
 
         // Operators based on abstraction(group var)
         std::vector<std::vector<std::pair<int, int>>> abstractOperatorPreconditions;
