@@ -21,10 +21,10 @@ namespace domain_abstractions {
             newDomainSizes.push_back((max_var_group_num + 1));
         }
 
-        vector<long long> newValues = computeNValues(newAbstraction, newDomainSizes);
+        vector<int> newValues = computeNValues(newAbstraction, newDomainSizes);
 
         // calculate max possible index
-        long long maxIndex = 0;
+        int maxIndex = 0;
         for (int i = 0; i < (int) newAbstraction.size(); i++) {
             maxIndex += (newValues[i] * (newDomainSizes[i]- 1));
         }
@@ -47,9 +47,9 @@ namespace domain_abstractions {
         return variableGroupVectors;
     }
 
-    long long DomainAbstraction::abstractStateLookupIndex(vector<int> &abstractStateRepresentation) {
+    int DomainAbstraction::abstractStateLookupIndex(vector<int> &abstractStateRepresentation) {
         // maps All sates to a number in range {0,..., #Abstractstates-1}
-        long long index = 0;
+        int index = 0;
         // loop over all abstraction parts/domains
         for (int i = 0; i < (int) abstractStateRepresentation.size(); i++) {
             index += (nValuesForHash[i] * abstractStateRepresentation[i]);
@@ -117,7 +117,7 @@ namespace domain_abstractions {
         reload(domainMap);
     }
 
-    vector<long long>
+    vector<int>
     DomainAbstraction::computeNValues(VariableGroupVectors newAbstraction, vector<int> &newDomainSizes) {
         /*
          * uses current AbstractDomains to calculate the N Values that are needed for the perfect hash function.
@@ -125,7 +125,7 @@ namespace domain_abstractions {
          * store them when computed
          * */
         // loop over all variables (we always have all variables considered in comparison to this hash for PDB)
-        vector<long long> newNValuesForHash(newAbstraction.size(), 1);
+        vector<int> newNValuesForHash(newAbstraction.size(), 1);
         for (int i = 0; i < (int) newAbstraction.size(); i++) {
             // loop over groups in abstract domain for current variable v_i
             for (int j = 0; j <= i - 1; j++) {
@@ -154,7 +154,7 @@ namespace domain_abstractions {
          * Returns a List of Abstract states (DomainAbstractedState) (representation of one state = vec<int>) that are the
          * possible successors of the given Abstract state. It uses a map to store already found successors, so that duplicated are
          * */
-        map<long long, shared_ptr<DomainAbstractedState>> alreadyFound; // store Id's of already found successors
+        map<int, shared_ptr<DomainAbstractedState>> alreadyFound; // store Id's of already found successors
         vector<int> stateValues = state->getGroupsAssignment();
         // loop over all operators
         for (int operatorIndex = 0; operatorIndex < transition_system->get_num_operators(); operatorIndex++) {
@@ -190,7 +190,7 @@ namespace domain_abstractions {
                     successorGroupMapping[fact.var] = getGroupForFact(fact);
                 }
 
-                long long abstractStateIndex = abstractStateLookupIndex(successorGroupMapping);
+                int abstractStateIndex = abstractStateLookupIndex(successorGroupMapping);
                 int newGValue = state->getGValue() + operatorCosts[operatorIndex];
                 // If we have not already found this successor -> add it to results
                 if ((alreadyFound.find(abstractStateIndex) == alreadyFound.end())) {
@@ -201,7 +201,7 @@ namespace domain_abstractions {
                     successorState->set_operator_id(operatorIndex);
                     successorState->setGValue(newGValue);
                     alreadyFound.insert(
-                            pair<long long, shared_ptr<DomainAbstractedState>>(abstractStateIndex, successorState));
+                            pair<int, shared_ptr<DomainAbstractedState>>(abstractStateIndex, successorState));
                 } else if (newGValue < alreadyFound[abstractStateIndex]->getGValue()) {
                     // we found a cheaper operator to reach the same successor!
                     alreadyFound[abstractStateIndex]->setGValue(newGValue);
@@ -372,7 +372,7 @@ namespace domain_abstractions {
         }
     }
 
-    long long DomainAbstraction::getNumberOfAbstractStates() const {
+    int DomainAbstraction::getNumberOfAbstractStates() const {
         return numAbstractStates;
     }
 

@@ -58,7 +58,7 @@ namespace domain_abstractions {
 
         std::shared_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
 
-        int calculateHValueOnTheFly(const VariableGroupVector &startStateValues, long long abstractStateIndex);
+        int calculateHValueOnTheFly(const VariableGroupVector &startStateValues, int abstractStateIndex);
     };
 }
 
