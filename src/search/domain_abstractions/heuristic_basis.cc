@@ -96,7 +96,9 @@ namespace domain_abstractions {
         int rounds = 0;
         while (not cegarShouldTerminate()) {
             rounds++;
-            //log << "CEGAR round " << rounds << ": --Current Abstraction--> " << currentAbstraction->getAbstractDomains() << endl;
+            if (log.is_at_least_normal()) {
+                log << "CEGAR round " << rounds << ": --Current Abstraction--> " << currentAbstraction->getAbstractDomains() << endl;
+            }
             shared_ptr<Trace> t = cegarFindOptimalTrace(currentAbstraction);
             if (!t) {
                 // When no trace in Abstract space was found -> Task Unsolvable -> log and break
@@ -235,9 +237,7 @@ namespace domain_abstractions {
         }
         // we get here when we followed trace without precondition flaw
         // now check for goal flaw
-        //log << "check if goal violation..." << endl;
         vector<FactPair> missedGoalFacts = transitionSystem->isGoal(currState);
-        //log << "received missed goal facts..." << endl;
         if (!missedGoalFacts.empty()) {
             if (log.is_at_least_debug()) {
                 log << "--> Goal Fact violation Flaw!" << endl;
@@ -323,8 +323,6 @@ namespace domain_abstractions {
             log << "got " << openList.size() << " abstract goal-states" << endl;
             log << "Now run backward search using Dijkstras Algorithm..." << endl;
         }
-
-        abstraction->generateAbstractTransitionSystem();
 
         // 2. Run Dijkstras Algorithm for backward search from every goal
         while (!openList.empty()) {

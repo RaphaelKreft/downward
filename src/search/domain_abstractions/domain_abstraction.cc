@@ -16,8 +16,8 @@ namespace domain_abstractions {
          * */
         vector<int> newDomainSizes;
         // calculate new domain sizes
-        for (auto &i: newAbstraction) {
-            int max_var_group_num = *max_element(i.begin(), i.end());
+        for (auto &varGroupVec: newAbstraction) {
+            int max_var_group_num = *max_element(varGroupVec.begin(), varGroupVec.end());
             newDomainSizes.push_back((max_var_group_num + 1));
         }
 
@@ -32,13 +32,14 @@ namespace domain_abstractions {
             //keep old Abstraction
             return -1;
         }
-        variableGroupVectors = std::move(newAbstraction);
+        variableGroupVectors = newAbstraction;
         nValuesForHash = newValues;
         numAbstractStates = maxIndex + 1;
         domainSizes = newDomainSizes;
 
         preCalculateVariableGroupFacts();
-        //generateAbstractTransitionSystem();
+        precalculateAbstractOperators();
+
         return 0;
     }
 
@@ -51,7 +52,7 @@ namespace domain_abstractions {
         long long index = 0;
         // loop over all abstraction parts/domains
         for (int i = 0; i < (int) abstractStateRepresentation.size(); i++) {
-            index += (nValuesForHash.at(i) * abstractStateRepresentation.at(i));
+            index += (nValuesForHash[i] * abstractStateRepresentation[i]);
         }
         assert(index >= 0);
         return index;
@@ -70,7 +71,7 @@ namespace domain_abstractions {
     }
 
     int DomainAbstraction::getGroupForFact(FactPair fact) {
-        // Returns group number inside abstract variable domain given a fact.
+        // Returns group number inside abstract variable domain given a fact. (fact of real values)
         return variableGroupVectors[fact.var][fact.value];
     }
 
@@ -89,7 +90,7 @@ namespace domain_abstractions {
          * */
         for (auto wantedFact: factsToFulfill) {
             // get group number of abstract state
-            int group = abstractCandidate.at(wantedFact.var);
+            int group = abstractCandidate[wantedFact.var];
             vector < FactPair > groupFacts = getVariableGroupFacts(wantedFact.var, group);
             if (find(groupFacts.begin(), groupFacts.end(), wantedFact) == groupFacts.end()) {
                 // if I cannot find the wanted fact in my group return false
@@ -100,20 +101,20 @@ namespace domain_abstractions {
     }
 
 
-    DomainAbstraction::DomainAbstraction(VariableGroupVectors domainMap, utils::LogProxy &log, TaskProxy originalTask,
+    DomainAbstraction::DomainAbstraction(const VariableGroupVectors& domainMap, utils::LogProxy &log, TaskProxy originalTask,
                                          shared_ptr <TransitionSystem> transitionSystem, int max_states) :
             transition_system(std::move(transitionSystem)),
             concrete_initial_state(originalTask.get_initial_state()),
             goal_facts(task_properties::get_fact_pairs(originalTask.get_goals())),
             originalTask(originalTask),
             log(log),
-            variableGroupVectors(std::move(domainMap)),
+            variableGroupVectors(domainMap),
             nValuesForHash(variableGroupVectors.size(), 0),
             operatorCosts(task_properties::get_operator_costs(originalTask)),
             domainSizes(variableGroupVectors.size(), 1),
             max_states(max_states) {
         // precompute N-Values for perfect hash function that is needed for lookup
-        reload(variableGroupVectors);
+        reload(domainMap);
     }
 
     vector<long long>
@@ -131,7 +132,7 @@ namespace domain_abstractions {
                 VariableGroupVector varGroupMapping = newAbstraction[j];
                 int numGroups = newDomainSizes[j];
                 assert(numGroups > 0);
-                newNValuesForHash.at(i) *= numGroups;
+                newNValuesForHash[i] *= numGroups;
             }
             assert(newNValuesForHash.at(i) >= 0);
         }
@@ -154,13 +155,31 @@ namespace domain_abstractions {
          * possible successors of the given Abstract state. It uses a map to store already found successors, so that duplicated are
          * */
         map<long long, shared_ptr<DomainAbstractedState>> alreadyFound; // store Id's of already found successors
-
+        vector<int> stateValues = state->getGroupsAssignment();
         // loop over all operators
         for (int operatorIndex = 0; operatorIndex < transition_system->get_num_operators(); operatorIndex++) {
-            vector < FactPair > preconditionsForOperator = transition_system->get_precondition_assignments_for_operator(
-                    operatorIndex);
 
-            if (groupAssignmentFulfillsFacts(state->getGroupsAssignment(), preconditionsForOperator)) { // Todo: use precaculation of abstract preconditions
+            /*vector<FactPair> preconditionFacts = transition_system->get_precondition_assignments_for_operator(operatorIndex);
+            bool test_cond = groupAssignmentFulfillsFacts(stateValues, preconditionFacts) == abstractStateFulfillsAbstractFacts(stateValues, abstractOperatorPreconditions[operatorIndex]);
+            if (!test_cond) {
+                log << "Abstract state:" << stateValues << endl;
+                log << "Op-Index: " << operatorIndex << endl;
+                log << "old test: " << groupAssignmentFulfillsFacts(stateValues, preconditionFacts) << endl;
+                log << "Precond-real Facts: " << endl;
+                for (auto i: preconditionFacts) {
+                    log << i.var << ":" << i.value << endl;
+                }
+                log << "Precond-real abstract precalculated: " << endl;
+                for (auto i: abstractOperatorPreconditions[operatorIndex]) {
+                    log << i.first << ":" << i.second << endl;
+                    for (auto vargroupass: variableGroupFacts[i.first][i.second]) {
+                        log << "--" << vargroupass << endl;
+                    }
+                    log << variableGroupFacts[i.first].size() << endl;
+                }
+            }
+            assert(test_cond); */
+            if (abstractStateFulfillsAbstractFacts(stateValues, abstractOperatorPreconditions[operatorIndex])) {
                 vector < FactPair >
                 postconditionsForOperator = transition_system->get_postcondition_assignments_for_operator(
                         operatorIndex);
@@ -260,7 +279,7 @@ namespace domain_abstractions {
     bool DomainAbstraction::abstractStateFulfillsAbstractFacts(vector<int> abstractState,
                                                                const vector <pair<int, int>> &abstractFacts) {
         for (auto &f: abstractFacts) {
-            if (abstractState.at(f.first) != f.second) {
+            if (abstractState[f.first] != f.second) {
                 return false;
             }
         }
@@ -278,7 +297,7 @@ namespace domain_abstractions {
         // loop over variables in concrete init state == all variables
         for (int varIndex = 0; varIndex < (int) concreteStateValues.size(); varIndex++) {
             // insert group number for variable x in the vector describing abstract
-            abstractStateGroups.push_back(variableGroupVectors[varIndex][concreteStateValues.at(varIndex)]);
+            abstractStateGroups.push_back(variableGroupVectors[varIndex][concreteStateValues[varIndex]]);
         }
         return make_shared<DomainAbstractedState>(abstractStateGroups, abstractStateLookupIndex(abstractStateGroups));
     }
@@ -308,7 +327,6 @@ namespace domain_abstractions {
         }
         assert(consideredGroupsPerVar.size() == originalTask.get_variables().size());
         // Now construct the Goal states
-        log << "ABSTR GOAL STATES: gen group combinations..." << endl;
         for (auto &goalState: groupCombinations(consideredGroupsPerVar)) {
             //log << goalState << endl;
             shared_ptr<DomainAbstractedState> goalSearchNode = make_shared<DomainAbstractedState>(goalState,
@@ -321,28 +339,34 @@ namespace domain_abstractions {
     }
 
 
-    void DomainAbstraction::generateAbstractTransitionSystem() {
+    void DomainAbstraction::precalculateAbstractOperators() {
         /*
          * Using the current Abstraction, the operators(their pre- and post-conditions) according to the abstract groups
          * are calculated. this makes the predecessor calculation more efficient.
          * */
-        log << "generate operator pre/post conds in abstract space..." << endl;
-        for (int op_index = 0; op_index < transition_system->get_num_operators(); op_index++) {
-            vector < FactPair > preCondsReal = transition_system->get_precondition_assignments_for_operator(op_index);
-            vector < FactPair > postCondsReal = transition_system->get_postcondition_assignments_for_operator(op_index);
+        if (log.is_at_least_debug()) {
+            log << "generate operator pre/post conditions in abstract space..." << endl;
+        }
+        abstractOperatorPreconditions.clear();
+        abstractOperatorPostconditions.clear();
+        vector <pair<int, int>> tmpVecPre;
+        vector <pair<int, int>> tmpVecPost;
 
-            vector <pair<int, int>> tmpVecPre;
-            vector <pair<int, int>> tmpVecPost;
+        for (int op_index = 0; op_index < transition_system->get_num_operators(); op_index++) {
+            vector < FactPair > realPreconditions = transition_system->get_precondition_assignments_for_operator(op_index);
+            vector < FactPair > realPostconditions = transition_system->get_postcondition_assignments_for_operator(op_index);
+            tmpVecPost.clear();
+            tmpVecPre.clear();
+
             // after that FactPairs have value = group number for variable
-            for (auto &preFact: preCondsReal) {
+            for (auto &preFact: realPreconditions) {
                 tmpVecPre.emplace_back(preFact.var, getGroupForFact(preFact));
             }
             abstractOperatorPreconditions.push_back(tmpVecPre);
 
-            for (auto &postFact: postCondsReal) {
+            for (auto &postFact: realPostconditions) {
                 tmpVecPost.emplace_back(postFact.var, getGroupForFact(postFact));
             }
-
 
             abstractOperatorPostconditions.push_back(tmpVecPost);
         }
@@ -366,7 +390,7 @@ namespace domain_abstractions {
         // loop over variables
         for (int varIndex = 0; varIndex < numVars; varIndex++) {
             // add group facts vector for variable -> init
-            variableGroupFacts.push_back(vector<vector<FactPair>>(getDomainSize(varIndex), vector<FactPair>()));
+            variableGroupFacts.emplace_back(getDomainSize(varIndex), vector<FactPair>());
             int varDomainSize = varProxy[varIndex].get_domain_size();
             for (int inDomainIndex = 0; inDomainIndex < varDomainSize; inDomainIndex++) {
                 FactPair pair(varIndex, inDomainIndex);

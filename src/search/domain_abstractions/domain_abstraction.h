@@ -32,14 +32,14 @@ namespace domain_abstractions {
 
         // precalced for every reload for performance reasons
         std::vector<std::vector<std::vector<FactPair>>> variableGroupFacts; // for each variable, for each group the vector of FactPairs is stored
-        std::vector<std::vector<int>> operatorsApplicablePerAbstractState;
+        //std::vector<std::vector<int>> operatorsApplicablePerAbstractState;
 
         // Operators based on abstraction(group var)
         std::vector<std::vector<std::pair<int, int>>> abstractOperatorPreconditions;
         std::vector<std::vector<std::pair<int, int>>> abstractOperatorPostconditions;
 
     public:
-        explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask,
+        explicit DomainAbstraction(const VariableGroupVectors& domains, utils::LogProxy &log, TaskProxy originalTask,
                                    std::shared_ptr<TransitionSystem>, int max_states);
 
         int reload(VariableGroupVectors newAbstraction);
@@ -68,7 +68,7 @@ namespace domain_abstractions {
 
         int getGroupForFact(FactPair fact);
 
-        void generateAbstractTransitionSystem();
+        void precalculateAbstractOperators();
 
         long long getNumberOfAbstractStates() const;
 
