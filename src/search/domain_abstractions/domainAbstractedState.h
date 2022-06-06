@@ -17,17 +17,17 @@ namespace domain_abstractions {
     class DomainAbstractedState {
         std::vector<int> groupAssignments; // for every var -> In which group inside dom(var) split are u?
 
-        long long abstract_state_id;
+        int abstract_state_id;
         // search-info
         int incomingOperator_ID{};
         int g_value{};
         std::shared_ptr<DomainAbstractedState> parentAbstractState;
     public:
-        DomainAbstractedState(std::vector<int> groupAssignments, long long ID);
+        DomainAbstractedState(std::vector<int> groupAssignments, int ID);
 
         std::vector<int> getGroupsAssignment();
 
-        long long get_id() const;
+        int get_id() const;
 
         int get_operator_id() const;
 

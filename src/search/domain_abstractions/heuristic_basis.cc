@@ -24,25 +24,34 @@ namespace domain_abstractions {
             1. generate abstraction using CEGAR for DomainAbstractions
             2. calculate the heuristic values for that Abstraction
         */
-
+        utils::Timer preCalcTimer(false);
+        utils::Timer abstractionConstructionTimer(false);
         // CONSTRUCT ABSTRACTION
         if (log.is_at_least_normal()) {
-            log << "Now construct abstraction..." << endl;
+            log << "Construct abstraction..." << endl;
         }
+        abstractionConstructionTimer.resume();
         abstraction = createAbstraction(originalTask);
+        abstractionConstructionTimer.stop();
 
-        if (log.is_at_least_normal()) {
-            log << "Abstraction Construction finished!" << endl;
-            log << "Final Abstraction: " << abstraction->getAbstractDomains() << endl;
-            log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;
-        }
         // Create vector for heuristic values
-
         heuristicValues = vector<int>(abstraction->getNumberOfAbstractStates(), INF);
 
         // PRECOMPUTE HEURISTIC VALUES
         if (!OTF) {
+            if (log.is_at_least_normal()) {
+                log << "Precalculate heuristic values..." << endl;
+            }
+            preCalcTimer.resume();
             calculateHeuristicValues();
+            preCalcTimer.stop();
+        }
+
+        if (log.is_at_least_normal()) {
+            log << "Final Abstraction: " << abstraction->getAbstractDomains() << endl;
+            log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;
+            log << "Time for abstraction construction: " << abstractionConstructionTimer << endl;
+            log << "Time for precalculation of heuristic-values: " << preCalcTimer << endl;
         }
     }
 
@@ -54,7 +63,7 @@ namespace domain_abstractions {
         vector<int> stateValues = state.get_unpacked_values();
         vector<int> correspondingAbstractState = abstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
-        long long hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
+        int hMapIndex = abstraction->abstractStateLookupIndex(correspondingAbstractState);
         if (heuristicValues[hMapIndex] == INF) {
             // if we have not calculated before, calculate and store
             if (OTF) {
@@ -79,14 +88,17 @@ namespace domain_abstractions {
             log << "CEGAR: create initial trivial abstraction.." << endl;
         }
         shared_ptr<DomainAbstraction> currentAbstraction = cegarTrivialAbstraction(originalTask);
-        log << "Initial Abstraction: " << currentAbstraction->getAbstractDomains() << endl;
+
         if (log.is_at_least_normal()) {
+            log << "Initial Abstraction: " << currentAbstraction->getAbstractDomains() << endl;
             log << "CEGAR: initial abstraction created, now run refinement loop..." << endl;
         }
         int rounds = 0;
         while (not cegarShouldTerminate()) {
             rounds++;
-            //log << "CEGAR round " << rounds << ": --Current Abstraction--> " << currentAbstraction->getAbstractDomains() << endl;
+            if (log.is_at_least_normal()) {
+                log << "CEGAR round " << rounds << ": --Current Abstraction--> " << currentAbstraction->getAbstractDomains() << endl;
+            }
             shared_ptr<Trace> t = cegarFindOptimalTrace(currentAbstraction);
             if (!t) {
                 // When no trace in Abstract space was found -> Task Unsolvable -> log and break
@@ -100,18 +112,15 @@ namespace domain_abstractions {
             if (!f) {
                 if (log.is_at_least_normal()) {
                     log << "CEGAR round " << rounds << ": Found concrete solution during refinement!!!" << endl;
-                    // maybe show solution??
-                    for (auto &transition: *t) {
-                        log << transition.op_id << ",";
-                    }
-                    log << endl;
                 }
                 break;
             }
             // If a Flaw has been found we need to refine the Abstraction
             cegarRefine(f, currentAbstraction);
         }
-        log << "#CEGAR Loop Iterations: " << rounds << endl;
+        if (log.is_at_least_normal()) {
+            log << "#CEGAR Loop Iterations: " << rounds << endl;
+        }
         return currentAbstraction;
     }
 
@@ -168,12 +177,12 @@ namespace domain_abstractions {
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         openList.push(initialState);
-        unordered_set<long long> closedList;
+        unordered_set<int> closedList;
 
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
-            long long nextState_ID = nextState->get_id();
+            int nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
                 if (currentAbstraction->isGoal(nextState)) {
@@ -217,9 +226,10 @@ namespace domain_abstractions {
                                                                                               nextTransition);
             // when missed-facts is not empty we have a precondition flaw -> preconditions not fulfilled in curr  state
             if (!missedPreconditionFacts.empty()) {
+                if (log.is_at_least_debug()) {
+                    log << "--> Precondition Violation Flaw!" << endl;
+                }
                 shared_ptr<vector<FactPair>> missedF(new vector<FactPair>(missedPreconditionFacts));
-                //log << "--> Needed Fact Pairs would have been: " << transitionSystem->get_precondition_assignments_for_operator(nextTransition.op_id) << endl;
-                //log << " --> Precondition Flaw at transition " << nextTransition << endl;
                 return make_shared<Flaw>(currState, missedF, false);
             }
             // if we have no missed facts we can apply operator and continue to follow the trace
@@ -227,15 +237,14 @@ namespace domain_abstractions {
         }
         // we get here when we followed trace without precondition flaw
         // now check for goal flaw
-        //log << "check if goal violation..." << endl;
         vector<FactPair> missedGoalFacts = transitionSystem->isGoal(currState);
-        //log << "received missed goal facts..." << endl;
         if (!missedGoalFacts.empty()) {
-            log << "--> Goal Fact violation Flaw!" << endl;
+            if (log.is_at_least_debug()) {
+                log << "--> Goal Fact violation Flaw!" << endl;
+            }
             shared_ptr<vector<FactPair>> missedGF(new vector<FactPair>(missedGoalFacts));
             return make_shared<Flaw>(currState, missedGF, true);
         }
-        log << "--> No Flaw!" << endl;
         return nullptr;
     }
 
@@ -255,7 +264,7 @@ namespace domain_abstractions {
     }
 
     int
-    HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector &startStateValues, long long abstractStateIndex) {
+    HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector &startStateValues, int abstractStateIndex) {
         /*
          * Creates Abstract State Instance and returns distance to goal State (In Abstracted State Space) by using uniform cost search!
          * Intended to be used when no heuristic values are precomputed after Abstraction construction.
@@ -269,12 +278,12 @@ namespace domain_abstractions {
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
         openList.push(startAState);
-        unordered_set<long long> closedList;
+        unordered_set<int> closedList;
 
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
-            long long nextState_ID = nextState->get_id();
+            int nextState_ID = nextState->get_id();
             if (closedList.find(nextState_ID) == closedList.end()) {
                 closedList.insert(nextState_ID);
                 if (abstraction->isGoal(nextState)) {
@@ -303,24 +312,25 @@ namespace domain_abstractions {
         // perform backward-Search from Goal using Dijkstras Algorithm
         priority_queue<shared_ptr<DomainAbstractedState>, DomainAbstractedStates, decltype(DomainAbstractedState::getComparator())> openList(
                 DomainAbstractedState::getComparator());
-        log << "Now generate Abstract Goal States.." << endl;
         // 1. Create All possible goal states (In Abstract State Space) and add them to openList
         for (const auto &goalState: abstraction->getAbstractGoalStates()) {
             openList.push(goalState);
             heuristicValues[goalState->get_id()] = 0;
-            log << goalState->getGroupsAssignment() << endl;
+            //log << goalState->getGroupsAssignment() << endl;
         }
-        log << "got " << openList.size() << " abstract goal-states" << endl;
-        abstraction->generateAbstractTransitionSystem();
+
+        if (log.is_at_least_debug()) {
+            log << "got " << openList.size() << " abstract goal-states" << endl;
+            log << "Now run backward search using Dijkstras Algorithm..." << endl;
+        }
 
         // 2. Run Dijkstras Algorithm for backward search from every goal
-        log << "Now run backward search..." << endl;
         while (!openList.empty()) {
             shared_ptr<DomainAbstractedState> nextState = openList.top();
             openList.pop();
 
             int old_g = nextState->getGValue();
-            long long old_id = nextState->get_id();
+            int old_id = nextState->get_id();
             const int curr_g = heuristicValues[old_id];
             if (curr_g < old_g) {
                 continue;
@@ -332,7 +342,7 @@ namespace domain_abstractions {
                 assert(pred_cost >= 0);
                 int succ_g = (pred_cost == INF) ? INF: pred_cost;
                 assert(succ_g >= 0);
-                long long succ_id = predecessor->get_id();
+                int succ_id = predecessor->get_id();
 
                 if (succ_g < heuristicValues[succ_id]) {
                     heuristicValues[succ_id] = succ_g;

@@ -24,21 +24,22 @@ namespace domain_abstractions {
         utils::LogProxy &log;
 
         VariableGroupVectors variableGroupVectors; // group mapping
-        std::vector<long long> nValuesForHash; // NValues need to compute perfect hash function for h-value lookup
+        std::vector<int> nValuesForHash; // NValues need to compute perfect hash function for h-value lookup
         std::vector<int> operatorCosts; // for faster operator cost access
         std::vector<int> domainSizes; // store num groups/domain size per variable. Used to get rid of max_element-ops
-        long long numAbstractStates{0};
+        int numAbstractStates{0};
         int max_states;
 
         // precalced for every reload for performance reasons
         std::vector<std::vector<std::vector<FactPair>>> variableGroupFacts; // for each variable, for each group the vector of FactPairs is stored
+        //std::vector<std::vector<int>> operatorsApplicablePerAbstractState;
 
         // Operators based on abstraction(group var)
         std::vector<std::vector<std::pair<int, int>>> abstractOperatorPreconditions;
         std::vector<std::vector<std::pair<int, int>>> abstractOperatorPostconditions;
 
     public:
-        explicit DomainAbstraction(VariableGroupVectors domains, utils::LogProxy &log, TaskProxy originalTask,
+        explicit DomainAbstraction(const VariableGroupVectors& domains, utils::LogProxy &log, TaskProxy originalTask,
                                    std::shared_ptr<TransitionSystem>, int max_states);
 
         int reload(VariableGroupVectors newAbstraction);
@@ -54,7 +55,7 @@ namespace domain_abstractions {
 
         VariableGroupVector
         getGroupAssignmentsForConcreteState(std::vector<int> &stateValues); // State -> abstract state
-        long long abstractStateLookupIndex(
+        int abstractStateLookupIndex(
                 std::vector<int> &abstractStateRepresentation);// for given Assignments of a State, a position of Abstract state in hvalue map is returned
 
         VariableGroupVectors getAbstractDomains();
@@ -67,9 +68,9 @@ namespace domain_abstractions {
 
         int getGroupForFact(FactPair fact);
 
-        void generateAbstractTransitionSystem();
+        void precalculateAbstractOperators();
 
-        long long getNumberOfAbstractStates() const;
+        int getNumberOfAbstractStates() const;
 
         int getDomainSize(int var);
 
@@ -77,7 +78,7 @@ namespace domain_abstractions {
 
         void preCalculateVariableGroupFacts();
 
-        std::vector<long long> computeNValues(VariableGroupVectors newAbstraction, std::vector<int> &newDomainSizes);
+        std::vector<int> computeNValues(VariableGroupVectors newAbstraction, std::vector<int> &newDomainSizes);
 
         static bool
         abstractStateFulfillsAbstractFacts(std::vector<int> abstractState,
