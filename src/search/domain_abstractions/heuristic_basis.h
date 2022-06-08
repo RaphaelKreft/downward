@@ -34,9 +34,10 @@ namespace domain_abstractions {
         DomainSplitter domainSplitter;
         utils::CountdownTimer timer;
         bool terminationFlag;
+        bool useSingleValueSplit;
     public:
         explicit HeuristicBasis(bool PRECALC, double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
-                                const std::string &splitMethod);
+                                const std::string &splitMethod, bool useSingleValueSplit);
 
         int getValue(const State &state);
 

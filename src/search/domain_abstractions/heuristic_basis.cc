@@ -9,10 +9,10 @@ namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
 
     HeuristicBasis::HeuristicBasis(bool PRECALC, double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
-                                   const string &splitMethodSuggestion) :
+                                   const string &splitMethodSuggestion, bool useSingleValueSplit) :
             OTF(!PRECALC), max_time(max_time), max_states(max_states),log(log),
             transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
-            domainSplitter(DomainSplitter(splitMethodSuggestion, log)), timer(max_time) {
+            domainSplitter(DomainSplitter(splitMethodSuggestion, log)), timer(max_time), useSingleValueSplit(useSingleValueSplit) {
         // reserve memory padding, at this time timer is also already started!
         utils::reserve_extra_memory_padding(memory_padding_in_mb);
         terminationFlag = false;
@@ -96,7 +96,7 @@ namespace domain_abstractions {
         int rounds = 0;
         while (not cegarShouldTerminate()) {
             rounds++;
-            if (log.is_at_least_normal()) {
+            if (log.is_at_least_debug()) {
                 log << "CEGAR round " << rounds << ": --Current Abstraction--> " << currentAbstraction->getAbstractDomains() << endl;
             }
             shared_ptr<Trace> t = cegarFindOptimalTrace(currentAbstraction);
@@ -230,7 +230,7 @@ namespace domain_abstractions {
                     log << "--> Precondition Violation Flaw!" << endl;
                 }
                 shared_ptr<vector<FactPair>> missedF(new vector<FactPair>(missedPreconditionFacts));
-                return make_shared<Flaw>(currState, missedF, false);
+                return make_shared<Flaw>(currState, missedF);
             }
             // if we have no missed facts we can apply operator and continue to follow the trace
             currState = transitionSystem->applyOperator(currState, nextTransition.op_id);
@@ -243,7 +243,7 @@ namespace domain_abstractions {
                 log << "--> Goal Fact violation Flaw!" << endl;
             }
             shared_ptr<vector<FactPair>> missedGF(new vector<FactPair>(missedGoalFacts));
-            return make_shared<Flaw>(currState, missedGF, true);
+            return make_shared<Flaw>(currState, missedGF);
         }
         return nullptr;
     }
@@ -256,7 +256,7 @@ namespace domain_abstractions {
         if (log.is_at_least_debug()) {
             log << "CEGAR Refine: refine abstraction on basis of found flaw.." << endl;
         }
-        VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, currentDomainAbstraction);
+        VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, currentDomainAbstraction, useSingleValueSplit);
         // Update DomainAbstractionObject if internal validity constraints are fulfilled, else keep old and set termination
         if (currentDomainAbstraction->reload(refinedAbstraction) == -1) {
             terminationFlag = true;
