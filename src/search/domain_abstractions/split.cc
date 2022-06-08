@@ -13,21 +13,22 @@ namespace domain_abstractions {
     }
 
     VariableGroupVectors
-    DomainSplitter::split(const shared_ptr <Flaw> &flaw, const shared_ptr <DomainAbstraction> &currentAbstraction) {
+    DomainSplitter::split(const shared_ptr <Flaw> &flaw, const shared_ptr <DomainAbstraction> &currentAbstraction, bool splitSingleRandomValue) {
         // Select method on how to split and call Submethod. We return the new Abstraction
+        //log << "Missed Facts: " << flaw->missedFacts->size() << endl;
         if (currentMethod == SplitMethod::SINGLEVALUESPLIT) {
-            if (flaw->isGoalFactViolationFlaw) {
+            if (splitSingleRandomValue) {
                 return performSingleValueSplitOneFact(flaw, currentAbstraction);
             }
             return performSingleValueSplit(flaw, currentAbstraction);
         } else if (currentMethod == SplitMethod::RANDOMUNIFORMSPLIT) {
-            if (flaw->isGoalFactViolationFlaw) {
+            if (splitSingleRandomValue) {
                 return performRandomUniformSplitOneFact(flaw, currentAbstraction);
             }
             return performRandomUniformSplit(flaw, currentAbstraction);
         } else {
             // default fallback if unknown
-            if (flaw->isGoalFactViolationFlaw) {
+            if (splitSingleRandomValue) {
                 return performSingleValueSplitOneFact(flaw, currentAbstraction);
             }
             return performSingleValueSplit(flaw, currentAbstraction);
@@ -42,7 +43,6 @@ namespace domain_abstractions {
          * */
         VariableGroupVectors newAbstraction = currentAbstraction->getAbstractDomains();
 
-        //vector<int> stateValues = flaw->getStateWhereFlawHappensCopy();
         vector<int> stateValues = *(flaw->stateWhereFlawHappens);
         vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(
                 stateValues);

@@ -24,7 +24,7 @@ namespace domain_abstractions {
         DomainSplitter(const std::string &method, utils::LogProxy &log);
 
         VariableGroupVectors split(const std::shared_ptr<Flaw> &flaw,
-                                   const std::shared_ptr<DomainAbstraction> &currentAbstraction);
+                                   const std::shared_ptr<DomainAbstraction> &currentAbstraction, bool splitRandomValue);
 
         // map string to ENUM
         static SplitMethod getEnumForString(const std::string &splitMethodSuggestion) {

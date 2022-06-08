@@ -48,13 +48,11 @@ namespace domain_abstractions {
     struct Flaw {
         std::shared_ptr<std::vector<int>> stateWhereFlawHappens; // from that we can later derive the abstract state
         std::shared_ptr<std::vector<FactPair>> missedFacts; // vector storing the facts for that the operation/goal flag would actually be applicable/true
-        bool isGoalFactViolationFlaw;
 
-        Flaw(const std::vector<int> &flawBaseState, const std::shared_ptr<std::vector<FactPair>> &missedF, bool isGoalFlaw) {
+        Flaw(const std::vector<int> &flawBaseState, const std::shared_ptr<std::vector<FactPair>> &missedF) {
             assert(!missedF->empty());
             stateWhereFlawHappens = std::make_shared<std::vector<int>>(flawBaseState);
             missedFacts = missedF;
-            isGoalFactViolationFlaw = isGoalFlaw;
         }
     };
 }
