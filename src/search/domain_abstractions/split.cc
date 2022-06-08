@@ -8,20 +8,22 @@ using namespace std;
 
 namespace domain_abstractions {
 
-    DomainSplitter::DomainSplitter(const string &method, utils::LogProxy &log) : currentMethod(
-            getEnumForString(method)), log(log) {
+    DomainSplitter::DomainSplitter(const string &splitMethodString, const string &splitSelectorString,
+                                   utils::LogProxy &log) : currentSplitMethod(
+            getEnumForString(splitMethodString)), currentSplitSelector(getSplitSelectorForString(splitSelectorString)),
+                                                           log(log) {
     }
 
     VariableGroupVectors
-    DomainSplitter::split(const shared_ptr <Flaw> &flaw, const shared_ptr <DomainAbstraction> &currentAbstraction, bool splitSingleRandomValue) {
-        // Select method on how to split and call Submethod. We return the new Abstraction
-        //log << "Missed Facts: " << flaw->missedFacts->size() << endl;
-        if (currentMethod == SplitMethod::SINGLEVALUESPLIT) {
+    DomainSplitter::split(const shared_ptr <Flaw> &flaw, const shared_ptr <DomainAbstraction> &currentAbstraction,
+                          bool splitSingleRandomValue) {
+        // Select method on how to split and call Sub-method. Can split all variables or choose one random! If we choose one fact to split, there are multiple methods on how to do that.
+        if (currentSplitMethod == SplitMethod::SINGLEVALUESPLIT) {
             if (splitSingleRandomValue) {
                 return performSingleValueSplitOneFact(flaw, currentAbstraction);
             }
             return performSingleValueSplit(flaw, currentAbstraction);
-        } else if (currentMethod == SplitMethod::RANDOMUNIFORMSPLIT) {
+        } else if (currentSplitMethod == SplitMethod::RANDOMUNIFORMSPLIT) {
             if (splitSingleRandomValue) {
                 return performRandomUniformSplitOneFact(flaw, currentAbstraction);
             }
@@ -66,17 +68,13 @@ namespace domain_abstractions {
          * */
         VariableGroupVectors newAbstraction = currentAbstraction->getAbstractDomains();
 
-        //vector<int> stateValues = flaw->getStateWhereFlawHappensCopy();
         vector<int> stateValues = *(flaw->stateWhereFlawHappens);
         vector<int> abstractStateWhereFlawHappened = currentAbstraction->getGroupAssignmentsForConcreteState(
                 stateValues);
         // choose one random missed fact
         shared_ptr<vector<FactPair>> missedFacts = flaw->missedFacts;
-        int random_idx = randIntFromRange(0, (int) missedFacts->size() - 1);
-        assert(random_idx < (int) missedFacts->size());
-        assert(random_idx >= 0);
-        // loop over variables and their domains
-        FactPair factPair = missedFacts->at(random_idx);
+        int splitFactIndex = selectSplitFact(flaw, currentAbstraction, currentSplitSelector);
+        FactPair factPair = missedFacts->at(splitFactIndex);
         int domainSize = currentAbstraction->getDomainSize(factPair.var);
         // just give missed-fact a new group
         newAbstraction[factPair.var][factPair.value] = domainSize;
@@ -143,11 +141,9 @@ namespace domain_abstractions {
                 flawState);
 
         shared_ptr<vector<FactPair>> missedFacts = flaw->missedFacts;
-        int random_idx = randIntFromRange(0, (int) missedFacts->size() - 1);
-        assert(random_idx < (int) missedFacts->size());
-        assert(random_idx >= 0);
+        int splitFactIndex = selectSplitFact(flaw, currentAbstraction, currentSplitSelector);
         // loop over variables and their domains
-        FactPair factPair = missedFacts->at(random_idx);
+        FactPair factPair = missedFacts->at(splitFactIndex);
         // determine groupNr for new group == domainSize(== max group num + 1)
         int domainSize = currentAbstraction->getDomainSize(factPair.var);
 
@@ -175,4 +171,40 @@ namespace domain_abstractions {
         }
         return newAbstraction;
     }
+
+    int DomainSplitter::selectSplitFact(const shared_ptr <Flaw> &flaw,
+                                        const shared_ptr <DomainAbstraction> &currentAbstraction,
+                                        SplitSelector split_select) {
+        shared_ptr<vector<FactPair>> missedFacts = flaw->missedFacts;;
+        // choose random fact
+        if (split_select == SplitSelector::RANDOM) {
+            int random_idx = randIntFromRange(0, (int) missedFacts->size() - 1);
+            return random_idx;
+        }
+        // choose according to other criteria
+        int currBestPairIndex = 0;
+        if (split_select == SplitSelector::MIN_NEWSTATES) {
+            int currBestNumNewStates = INF;
+            for (int i = 0; i < (int) missedFacts->size(); i++) {
+                int curr_domainSize = currentAbstraction->getDomainSize(missedFacts->at(i).var);
+                int newNumAbstractStates = (curr_domainSize + 1) / curr_domainSize;
+                if (newNumAbstractStates < currBestNumNewStates) {
+                    currBestPairIndex = i;
+                }
+            }
+        } else if (split_select ==
+                   SplitSelector::LEAST_REFINED) { // least refined mean we have the minimal num of groups in the domain and thus a higher gain of new#states/old#states ratio
+            int currBestNumNewStates = 0;
+            for (int i = 0; i < (int) missedFacts->size(); i++) {
+                int curr_domainSize = currentAbstraction->getDomainSize(missedFacts->at(i).var);
+                int newNumAbstractStates = (curr_domainSize + 1) / curr_domainSize;
+                if (newNumAbstractStates > currBestNumNewStates) {
+                    currBestPairIndex = i;
+                }
+            }
+        }
+
+        return currBestPairIndex;
+    }
+
 }

@@ -37,7 +37,7 @@ namespace domain_abstractions {
         bool useSingleValueSplit;
     public:
         explicit HeuristicBasis(bool PRECALC, double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
-                                const std::string &splitMethod, bool useSingleValueSplit);
+                                const std::string &splitMethod, const std::string &splitSelectorString, bool useSingleValueSplit);
 
         int getValue(const State &state);
 
