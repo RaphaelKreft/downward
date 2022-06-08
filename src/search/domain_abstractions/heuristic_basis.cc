@@ -9,10 +9,10 @@ namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
 
     HeuristicBasis::HeuristicBasis(bool PRECALC, double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
-                                   const string &splitMethodSuggestion, bool useSingleValueSplit) :
-            OTF(!PRECALC), max_time(max_time), max_states(max_states),log(log),
+                                   const string &splitMethodString, const string &splitSelectorString, bool useSingleValueSplit) :
+            OTF(!PRECALC), max_time(max_time), max_states(max_states), log(log),
             transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
-            domainSplitter(DomainSplitter(splitMethodSuggestion, log)), timer(max_time), useSingleValueSplit(useSingleValueSplit) {
+            domainSplitter(DomainSplitter(splitMethodString, splitSelectorString, log)), timer(max_time), useSingleValueSplit(useSingleValueSplit) {
         // reserve memory padding, at this time timer is also already started!
         utils::reserve_extra_memory_padding(memory_padding_in_mb);
         terminationFlag = false;
