@@ -46,9 +46,11 @@ namespace domain_abstractions {
             calculateHeuristicValues();
             preCalcTimer.stop();
         }
-        if (utils::extra_memory_padding_is_reserved()) {
+
+        if(utils::extra_memory_padding_is_reserved()) {
             utils::release_extra_memory_padding();
         }
+
         if (log.is_at_least_normal()) {
             log << "Final Abstraction: " << abstraction->getAbstractDomains() << endl;
             log << "#Abstract States: " << abstraction->getNumberOfAbstractStates() << endl;

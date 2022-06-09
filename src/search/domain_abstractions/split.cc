@@ -182,14 +182,19 @@ namespace domain_abstractions {
             return random_idx;
         }
         // choose according to other criteria
-        int currBestPairIndex = 0;
+        vector<int> bestIndexList; // if multiple split variables are equally good store them in list to uniformly random choose
         if (split_select == SplitSelector::MIN_NEWSTATES) {
             int currBestNumNewStates = INF;
             for (int i = 0; i < (int) missedFacts->size(); i++) {
                 int curr_domainSize = currentAbstraction->getDomainSize(missedFacts->at(i).var);
                 int newNumAbstractStates = (curr_domainSize + 1) / curr_domainSize;
                 if (newNumAbstractStates < currBestNumNewStates) {
-                    currBestPairIndex = i;
+                    currBestNumNewStates = newNumAbstractStates;
+                    bestIndexList.clear();
+                    bestIndexList.push_back(i);
+                    continue;
+                } else if (newNumAbstractStates == currBestNumNewStates) {
+                    bestIndexList.push_back(i);
                 }
             }
         } else if (split_select ==
@@ -199,12 +204,19 @@ namespace domain_abstractions {
                 int curr_domainSize = currentAbstraction->getDomainSize(missedFacts->at(i).var);
                 int newNumAbstractStates = (curr_domainSize + 1) / curr_domainSize;
                 if (newNumAbstractStates > currBestNumNewStates) {
-                    currBestPairIndex = i;
+                    currBestNumNewStates = newNumAbstractStates;
+                    bestIndexList.clear();
+                    bestIndexList.push_back(i);
+                    continue;
+                } else if (newNumAbstractStates == currBestNumNewStates) {
+                    bestIndexList.push_back(i);
                 }
             }
         }
 
-        return currBestPairIndex;
+        int rdm_idx = randIntFromRange(0, (int) bestIndexList.size() - 1);
+
+        return bestIndexList[rdm_idx];
     }
 
 }
