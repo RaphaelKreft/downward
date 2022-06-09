@@ -190,6 +190,7 @@ namespace domain_abstractions {
                 int newNumAbstractStates = (curr_domainSize + 1) / curr_domainSize;
                 if (newNumAbstractStates < currBestNumNewStates) {
                     currBestPairIndex = i;
+                    currBestNumNewStates = newNumAbstractStates;
                 }
             }
         } else if (split_select ==
@@ -200,6 +201,7 @@ namespace domain_abstractions {
                 int newNumAbstractStates = (curr_domainSize + 1) / curr_domainSize;
                 if (newNumAbstractStates > currBestNumNewStates) {
                     currBestPairIndex = i;
+                    currBestNumNewStates = newNumAbstractStates;
                 }
             }
         }

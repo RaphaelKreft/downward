@@ -14,7 +14,6 @@ namespace domain_abstractions {
             transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
             domainSplitter(DomainSplitter(splitMethodString, splitSelectorString, log)), timer(max_time), useSingleValueSplit(useSingleValueSplit) {
         // reserve memory padding, at this time timer is also already started!
-        utils::reserve_extra_memory_padding(memory_padding_in_mb);
         terminationFlag = false;
     }
 
@@ -24,6 +23,7 @@ namespace domain_abstractions {
             1. generate abstraction using CEGAR for DomainAbstractions
             2. calculate the heuristic values for that Abstraction
         */
+        utils::reserve_extra_memory_padding(memory_padding_in_mb);
         utils::Timer preCalcTimer(false);
         utils::Timer abstractionConstructionTimer(false);
         // CONSTRUCT ABSTRACTION
@@ -45,6 +45,10 @@ namespace domain_abstractions {
             preCalcTimer.resume();
             calculateHeuristicValues();
             preCalcTimer.stop();
+        }
+
+        if(utils::extra_memory_padding_is_reserved()) {
+            utils::release_extra_memory_padding();
         }
 
         if (log.is_at_least_normal()) {
