@@ -4,6 +4,7 @@
 #include <cassert>
 #include "da_utils.h"
 
+
 using namespace std;
 
 namespace domain_abstractions {

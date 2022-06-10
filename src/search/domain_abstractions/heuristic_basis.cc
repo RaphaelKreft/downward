@@ -12,7 +12,7 @@ namespace domain_abstractions {
                                    const string &splitMethodString, const string &splitSelectorString, bool useSingleValueSplit) :
             OTF(!PRECALC), max_time(max_time), max_states(max_states), log(log),
             transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
-            domainSplitter(DomainSplitter(splitMethodString, splitSelectorString, log)), timer(max_time), useSingleValueSplit(useSingleValueSplit) {
+            domainSplitter(DomainSplitter(splitMethodString, splitSelectorString, log)), timer(max_time), useSingleFactSplit(useSingleValueSplit) {
         // reserve memory padding, at this time timer is also already started!
         terminationFlag = false;
     }
@@ -260,10 +260,17 @@ namespace domain_abstractions {
         if (log.is_at_least_debug()) {
             log << "CEGAR Refine: refine abstraction on basis of found flaw.." << endl;
         }
-        VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, currentDomainAbstraction, useSingleValueSplit);
+        VariableGroupVectors refinedAbstraction = domainSplitter.split(flaw, currentDomainAbstraction, useSingleFactSplit);
         // Update DomainAbstractionObject if internal validity constraints are fulfilled, else keep old and set termination
         if (currentDomainAbstraction->reload(refinedAbstraction) == -1) {
-            terminationFlag = true;
+            // if singlefactsplit has not been used, use it now if we had more than one fact anyway
+            if (not useSingleFactSplit && flaw->missedFacts->size() > 1) {
+                useSingleFactSplit = true;
+                cegarRefine(flaw, currentDomainAbstraction);
+                useSingleFactSplit = false;
+            } else {
+                terminationFlag = true;
+            }
         }
     }
 
