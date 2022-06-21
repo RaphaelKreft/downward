@@ -26,11 +26,14 @@ namespace domain_abstractions {
         double max_time = opts.get<double>("max_time");
         int max_states = opts.get<int>("max_states");
         bool precalculation = opts.get<bool>("precalculation");
-        bool splitSingleRandomValue = opts.get<bool>("singlevaluesplit");
+        bool splitSingleFact = opts.get<bool>("singlefactsplit");
+        bool initial_goal_split = opts.get<bool>("initial_goal_split");
         string splitMethod = opts.get<string>("split_method");
         string splitSelector = opts.get<string>("split_selector");
         //log << task_proxy.get_initial_state().get_unpacked_values() << endl;
-        shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(precalculation, max_time, max_states,log, task_proxy, splitMethod, splitSelector, splitSingleRandomValue);
+        shared_ptr<HeuristicBasis> h = make_shared<HeuristicBasis>(precalculation, max_time, max_states, log,
+                                                                   task_proxy, splitMethod, splitSelector,
+                                                                   splitSingleFact, initial_goal_split);
         // call to construct will start refinement using CEGAR-Algorithm, check that no axioms and conditional effects!
         task_properties::verify_no_axioms(task_proxy);
         task_properties::verify_no_conditional_effects(task_proxy);
@@ -74,12 +77,15 @@ namespace domain_abstractions {
                 Bounds("0.0", "infinity"));
         parser.add_option<string>("split_method",
                                   "The Method how the Abstraction Refinement works",
-                                  "SingleValueSplit");
+                                  "singlevaluesplit");
         parser.add_option<bool>("precalculation",
                                 "Determines whether h-values are precalculated or determined on the fly",
                                 "false");
-        parser.add_option<bool>("singlevaluesplit",
+        parser.add_option<bool>("singlefactsplit",
                                 "Determines if a split is performed on one single fact or all missed facts",
+                                "false");
+        parser.add_option<bool>("initial_goal_split",
+                                "when true, the initial abstraction will have as many goal facts splitted as possible",
                                 "false");
         parser.add_option<string>("split_selector",
                                   "When Single Value Split is used in abstraction refinement, this is the strategy how the fact to split alog is chosen"

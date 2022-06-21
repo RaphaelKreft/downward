@@ -25,6 +25,7 @@ namespace domain_abstractions {
             }
             return performSingleValueSplit(flaw, currentAbstraction);
         } else if (currentSplitMethod == SplitMethod::RANDOMUNIFORMSPLIT) {
+            log << "RS" <<endl;
             if (splitSingleRandomValue) {
                 return performRandomUniformSplitOneFact(flaw, currentAbstraction);
             }

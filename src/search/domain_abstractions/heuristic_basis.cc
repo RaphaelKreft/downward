@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <memory>
+#include <random>
 
 using namespace std;
 
@@ -9,10 +10,11 @@ namespace domain_abstractions {
     static const int memory_padding_in_mb = 75;
 
     HeuristicBasis::HeuristicBasis(bool PRECALC, double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
-                                   const string &splitMethodString, const string &splitSelectorString, bool useSingleValueSplit) :
-            OTF(!PRECALC), max_time(max_time), max_states(max_states), log(log),
-            transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
-            domainSplitter(DomainSplitter(splitMethodString, splitSelectorString, log)), timer(max_time), useSingleFactSplit(useSingleValueSplit) {
+                                   const string &splitMethodString, const string &splitSelectorString, bool useSingleValueSplit, bool initial_goal_split) :
+            OTF(!PRECALC), initial_goal_split(initial_goal_split), max_time(max_time), max_states(max_states),
+            log(log), transitionSystem(make_shared<TransitionSystem>(originalTask.get_operators(), originalTask, log)),
+            domainSplitter(DomainSplitter(splitMethodString, splitSelectorString, log)), timer(max_time),
+            useSingleFactSplit(useSingleValueSplit) {
         // reserve memory padding, at this time timer is also already started!
         terminationFlag = false;
     }
@@ -71,7 +73,7 @@ namespace domain_abstractions {
         if (heuristicValues[hMapIndex] == INF) {
             // if we have not calculated before, calculate and store
             if (OTF) {
-                int h_val = calculateHValueOnTheFly(correspondingAbstractState, hMapIndex);
+                int h_val = calculateHValueOnDemand(correspondingAbstractState, hMapIndex);
                 heuristicValues[hMapIndex] = h_val;
                 return h_val;
             } else {
@@ -91,7 +93,15 @@ namespace domain_abstractions {
         if (log.is_at_least_normal()) {
             log << "CEGAR: create initial trivial abstraction.." << endl;
         }
-        shared_ptr<DomainAbstraction> currentAbstraction = cegarTrivialAbstraction(originalTask);
+
+        shared_ptr<DomainAbstraction> currentAbstraction;
+        if (initial_goal_split) {
+            log << "Split Goal Facts initially..." << endl;
+            currentAbstraction = cegarTrivialAbstractionGoalsSplitted(originalTask);
+        } else {
+            log << "Use most trivial initial abstraction..." << endl;
+            currentAbstraction = cegarTrivialAbstraction(originalTask);
+        }
 
         if (log.is_at_least_normal()) {
             log << "Initial Abstraction: " << currentAbstraction->getAbstractDomains() << endl;
@@ -275,7 +285,7 @@ namespace domain_abstractions {
     }
 
     int
-    HeuristicBasis::calculateHValueOnTheFly(const VariableGroupVector &startStateValues, int abstractStateIndex) {
+    HeuristicBasis::calculateHValueOnDemand(const VariableGroupVector &startStateValues, int abstractStateIndex) {
         /*
          * Creates Abstract State Instance and returns distance to goal State (In Abstracted State Space) by using uniform cost search!
          * Intended to be used when no heuristic values are precomputed after Abstraction construction.
@@ -361,5 +371,21 @@ namespace domain_abstractions {
                 }
             }
         }
+    }
+
+    shared_ptr<DomainAbstraction> HeuristicBasis::cegarTrivialAbstractionGoalsSplitted(TaskProxy originalTask) {
+        shared_ptr<DomainAbstraction> initialAbstraction = cegarTrivialAbstraction(originalTask);
+        vector<FactPair> goal_facts = transitionSystem->getGoalFacts();
+        // shuffle so that pick from goals is random
+        std::shuffle(goal_facts.begin(), goal_facts.end(), std::mt19937(std::random_device()()));
+        for (auto goalFactToSplit : goal_facts) {
+            VariableGroupVectors refinedAbstraction = initialAbstraction->getAbstractDomains();
+            refinedAbstraction[goalFactToSplit.var][goalFactToSplit.value] = 1;
+            // check if it gets too big
+            if (initialAbstraction->reload(refinedAbstraction) == -1) {
+                break;
+            }
+        }
+        return initialAbstraction;
     }
 }
