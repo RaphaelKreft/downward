@@ -407,3 +407,40 @@ class IssueExperiment(FastDownwardExperiment):
             print("and this")
 
         self.add_step(step_name, make_scatter_plots)
+
+    def add_onerev_scatter_plot_step(self, relative=False, attributes=None):
+        if relative:
+            scatter_dir = os.path.join(self.eval_dir, "scatter-relative")
+            step_name = "make-relative-scatter-plots"
+        else:
+            scatter_dir = os.path.join(self.eval_dir, "scatter-absolute")
+            step_name = "make-absolute-scatter-plots"
+        if attributes is None:
+            attributes = self.DEFAULT_SCATTER_PLOT_ATTRIBUTES
+
+        def find_category(run1, run2):
+            return None
+
+        def make_scatter_plot(config_nick, attribute, config_nick2=None):
+            name = "-".join([self.name, attribute, config_nick])
+            if config_nick2 is not None:
+                name += "-" + config_nick2
+            print("Make scatter plot for", name)
+            algo1 = get_algo_nick(self._revisions[0], config_nick)
+            algo2 = get_algo_nick(self._revisions[0], config_nick if config_nick2 is None else config_nick2)
+            report = ScatterPlotReport(
+                filter_algorithm=[algo1, algo2],
+                attributes=[attribute],
+                relative=relative,
+                get_category=find_category)
+            report(
+                self.eval_dir,
+                os.path.join(scatter_dir, name))
+
+        def make_scatter_plots():
+            for config1, config2 in itertools.combinations(self._configs, 2):
+                    for attribute in self.get_supported_attributes(
+                            config1.nick, attributes):
+                        make_scatter_plot(config1.nick, attribute, config2.nick)
+
+        self.add_step(step_name, make_scatter_plots)
