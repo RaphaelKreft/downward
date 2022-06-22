@@ -36,13 +36,13 @@ namespace domain_abstractions {
 
         // map string to ENUM
         static SplitMethod getEnumForString(const std::string &splitMethodSuggestion) {
-            if (splitMethodSuggestion == "SingleValueSplit") {
+            if (splitMethodSuggestion == "singlevaluesplit") {
                 return SplitMethod::SINGLEVALUESPLIT;
-            } else if (splitMethodSuggestion == "RandomUniformSplit") {
+            } else if (splitMethodSuggestion == "randomuniformsplit") {
                 return SplitMethod::RANDOMUNIFORMSPLIT;
             } else {
-                // by default always use best known option (Now: hardsplit)
-                return SplitMethod::RANDOMUNIFORMSPLIT;
+                // by default always use best known option
+                return SplitMethod::SINGLEVALUESPLIT;
             }
         }
 

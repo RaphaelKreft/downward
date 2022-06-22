@@ -24,6 +24,7 @@ namespace domain_abstractions {
 
     class HeuristicBasis {
         bool OTF; // Will the heuristic values be calculated on the fly
+        bool initial_goal_split; // When true, as many goal facts as possible will be splitted
         double max_time;
         int max_states;
         utils::LogProxy &log;
@@ -37,7 +38,7 @@ namespace domain_abstractions {
         bool useSingleFactSplit;
     public:
         explicit HeuristicBasis(bool PRECALC, double max_time, int max_states, utils::LogProxy &log, TaskProxy originalTask,
-                                const std::string &splitMethod, const std::string &splitSelectorString, bool useSingleValueSplit);
+                                const std::string &splitMethod, const std::string &splitSelectorString, bool useSingleValueSplit, bool initial_goal_split);
 
         int getValue(const State &state);
 
@@ -58,8 +59,9 @@ namespace domain_abstractions {
         std::shared_ptr<Flaw> cegarFindFlaw(const std::shared_ptr<Trace> &trace);
 
         std::shared_ptr<DomainAbstraction> cegarTrivialAbstraction(TaskProxy originalTask);
+        std::shared_ptr<DomainAbstraction> cegarTrivialAbstractionGoalsSplitted(TaskProxy originalTask);
 
-        int calculateHValueOnTheFly(const VariableGroupVector &startStateValues, int abstractStateIndex);
+        int calculateHValueOnDemand(const VariableGroupVector &startStateValues, int abstractStateIndex);
     };
 }
 
