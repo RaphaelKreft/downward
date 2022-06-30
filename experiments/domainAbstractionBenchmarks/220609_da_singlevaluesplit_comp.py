@@ -1,12 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
-"""
-Lookup List + OTF Calculation + Hardsplit
--> Optimized performance of OTF Calculation 
-"""
-
 import os
 
 import common_setup
@@ -14,6 +8,7 @@ from downward.reports.absolute import AbsoluteReport
 
 from lab.reports import Attribute, arithmetic_mean
 from lab.environments import LocalEnvironment, BaselSlurmEnvironment
+
 
 def setup_environment():
     if common_setup.is_running_on_cluster():
@@ -44,23 +39,20 @@ def setup_environment():
     return benchmarks_dir, suite, environment
 
 
-REVISION = "48da45c744dfe3c33771d20ace156fe7ad4f5f2e"
+REVISION = "263ede319944a4bdb3df9b2045c1171a87a1f29a"
 REPO = os.environ["DOWNWARD_REPO"]
 BENCHMARKS_DIR, SUITE, ENVIRONMENT = setup_environment()
 
 # time in seconds
-precomp_times = [120, 300, 900, 600]
+max_state_caps = [2048, 5000]
 CONFIGS = []
 
-for time in precomp_times:
-    CONFIGS.append(common_setup.IssueConfig(f"daOTF-{time}", ["--search", f"astar(domain_abstraction(max_time={time}))"]))
-    CONFIGS.append(common_setup.IssueConfig(f"cegar-{time}", ["--search", f"astar(cegar(max_time={time}))"]))
+for state_cap in max_state_caps:
+    CONFIGS.append(common_setup.IssueConfig(f"daPrecomp-{state_cap}", ["--search", f"astar(domain_abstraction(precalculation=true, max_states={state_cap}))"]))
+    CONFIGS.append(common_setup.IssueConfig(f"daPrecomp-{state_cap}-sv-random", ["--search", f"astar(domain_abstraction(precalculation=true, max_states={state_cap},singlevaluesplit=true,split_selector=random))"]))
+    CONFIGS.append(common_setup.IssueConfig(f"daPrecomp-{state_cap}-sv-minStateGain", ["--search", f"astar(domain_abstraction(precalculation=true, max_states={state_cap},singlevaluesplit=true,split_selector=min_states_gain))"]))
+    CONFIGS.append(common_setup.IssueConfig(f"daPrecomp-{state_cap}-sv-leastRefined", ["--search", f"astar(domain_abstraction(precalculation=true, max_states={state_cap},singlevaluesplit=true,split_selector=least_refined))"]))
 
-print(f"We have {len(CONFIGS)} configurations to run for every task!")
-print(f"We think repo is at: {REPO}")
-print(f"We think benchmarks are at: {BENCHMARKS_DIR}")
-print(f"We have {len(SUITE)} tasks in our suite!")
-		
 exp = common_setup.IssueExperiment(
     revisions=[REVISION],
     configs=CONFIGS,
@@ -72,12 +64,14 @@ exp.add_suite(BENCHMARKS_DIR, SUITE)
 exp.add_parser(exp.PLANNER_PARSER)
 exp.add_parser(exp.EXITCODE_PARSER)
 exp.add_parser(exp.SINGLE_SEARCH_PARSER)
+exp.add_parser("parser.py")
 
 exp.add_step("build", exp.build)
 exp.add_step("start", exp.start_runs)
 exp.add_fetcher(name="fetch")
 
-exp.add_absolute_report_step()
+#exp.add_absolute_report_step(attributes=(["Num AbstractStates", "Num CEGAR Loop Iterations", "Precalc time"] + common_setup.IssueExperiment.DEFAULT_TABLE_ATTRIBUTES))
+exp.add_onerev_scatter_plot_step()
 exp.add_parse_again_step()
 
 exp.run_steps()

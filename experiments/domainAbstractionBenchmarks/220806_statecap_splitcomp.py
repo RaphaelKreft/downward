@@ -1,14 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
-"""
-Lookup List + OTF Calculation
-logging errors due to overflow mitigated -> early abortion when index gets too large
-Hardsplit Method
-More times 
-"""
-
 import os
 
 import common_setup
@@ -16,6 +8,7 @@ from downward.reports.absolute import AbsoluteReport
 
 from lab.reports import Attribute, arithmetic_mean
 from lab.environments import LocalEnvironment, BaselSlurmEnvironment
+
 
 def setup_environment():
     if common_setup.is_running_on_cluster():
@@ -46,23 +39,18 @@ def setup_environment():
     return benchmarks_dir, suite, environment
 
 
-REVISION = "106bffc2f"
+REVISION = "de12cf30bfc7eb5efabe6f6c8d603eb8f1ac3752"
 REPO = os.environ["DOWNWARD_REPO"]
 BENCHMARKS_DIR, SUITE, ENVIRONMENT = setup_environment()
 
 # time in seconds
-precomp_times = [120, 300, 900, 600]
+max_state_caps = [2048,500]
 CONFIGS = []
 
-for time in precomp_times:
-    CONFIGS.append(common_setup.IssueConfig(f"daOTF-{time}", ["--search", f"astar(domain_abstraction(max_time={time}))"]))
-    CONFIGS.append(common_setup.IssueConfig(f"cegar-{time}", ["--search", f"astar(cegar(max_time={time}))"]))
+for state_cap in max_state_caps:
+    CONFIGS.append(common_setup.IssueConfig(f"daPrecomp-{state_cap}", ["--search", f"astar(domain_abstraction(precalculation=true, max_states={state_cap}))"]))
+    CONFIGS.append(common_setup.IssueConfig(f"daPrecomp-{state_cap}-sv", ["--search", f"astar(domain_abstraction(precalculation=true, max_states={state_cap},singlevaluesplit=true))"]))
 
-print(f"We have {len(CONFIGS)} configurations to run for every task!")
-print(f"We think repo is at: {REPO}")
-print(f"We think benchmarks are at: {BENCHMARKS_DIR}")
-print(f"We have {len(SUITE)} tasks in our suite!")
-		
 exp = common_setup.IssueExperiment(
     revisions=[REVISION],
     configs=CONFIGS,
@@ -74,12 +62,19 @@ exp.add_suite(BENCHMARKS_DIR, SUITE)
 exp.add_parser(exp.PLANNER_PARSER)
 exp.add_parser(exp.EXITCODE_PARSER)
 exp.add_parser(exp.SINGLE_SEARCH_PARSER)
+exp.add_parser("parser.py")
 
 exp.add_step("build", exp.build)
 exp.add_step("start", exp.start_runs)
 exp.add_fetcher(name="fetch")
 
-exp.add_absolute_report_step()
+exp.add_absolute_report_step(attributes=(["Num AbstractStates", "Num CEGAR Loop Iterations", "Precalc time"] + common_setup.IssueExperiment.DEFAULT_TABLE_ATTRIBUTES))
 exp.add_parse_again_step()
+
+plot_pairs = [("daPrecomp-2048","daPrecomp-2048-sv"),("daPrecomp-5000","daPrecomp-5000-sv"),("daPrecomp-2048","daPrecomp-5000")]
+for alg1,alg2 in plot_pairs:
+    exp.add_report(ScatterPlotReport(attributes=["expansions_until_last_jump"],filter_algorithm=[alg1,alg2]))
+    exp.add_report(ScatterPlotReport(attributes=["initial_h_value"],filter_algorithm=[alg1,alg2]))
+    exp.add_report(ScatterPlotReport(attributes=["total_time"],filter_algorithm=[alg1,alg2]))
 
 exp.run_steps()

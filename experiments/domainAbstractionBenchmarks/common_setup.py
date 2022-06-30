@@ -431,16 +431,32 @@ class IssueExperiment(FastDownwardExperiment):
             report = ScatterPlotReport(
                 filter_algorithm=[algo1, algo2],
                 attributes=[attribute],
+                format="tex",
                 relative=relative,
                 get_category=find_category)
             report(
                 self.eval_dir,
                 os.path.join(scatter_dir, name))
 
-        def make_scatter_plots():
-            for config1, config2 in itertools.combinations(self._configs, 2):
+        def make_scatter_plots_finalcomp():
+            final_comp_pairs = [("daOTF-4000","daPrecomp-1024-gs")]
+            """[("daOTF-4000", "CartesianCEGAR-SinglePattern"),("daOTF-4000", "pdbCEGAR-additive"),
+            ("daOTF-4000", "pdbCEGAR-nonadditive"),("daOTF-4000", "pdbCEGAR-SinglePattern"), ("daOTF-400", "daPrecomp-1024-gs"),
+            ("daPrecomp-1024-gs", "pdbCEGAR-additive"), ("daPrecomp-1024-gs", "pdbCEGAR-nonadditive"), ("daPrecomp-1024-gs", "pdbCEGAR-SinglePattern"),
+            ("daPrecomp-1024-gs", "CartesianCEGAR-SinglePattern")]"""
+            all_combis = itertools.combinations(self._configs, 2)
+            for config1, config2 in all_combis:
+                    if ((config1.nick, config2.nick) not in final_comp_pairs) and ((config2.nick, config1.nick) not in final_comp_pairs):
+                        continue
                     for attribute in self.get_supported_attributes(
                             config1.nick, attributes):
                         make_scatter_plot(config1.nick, attribute, config2.nick)
+        
+        def make_scatter_plots_singlefactsplitcomp():
+            attributes = ["coverage", "total_time", "expansions_until_last_jump", "search_time"]
+            all_combis = itertools.combinations(self._configs, 2)
+            for config1, config2 in all_combis:
+                    for attribute in attributes:
+                        make_scatter_plot(config1.nick, attribute, config2.nick)
 
-        self.add_step(step_name, make_scatter_plots)
+        self.add_step(step_name, make_scatter_plots_finalcomp)

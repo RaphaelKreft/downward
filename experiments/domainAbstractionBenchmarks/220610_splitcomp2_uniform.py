@@ -5,9 +5,11 @@ import os
 
 import common_setup
 from downward.reports.absolute import AbsoluteReport
+from downward.reports.scatter import ScatterPlotReport
 
 from lab.reports import Attribute, arithmetic_mean
 from lab.environments import LocalEnvironment, BaselSlurmEnvironment
+
 
 def setup_environment():
     if common_setup.is_running_on_cluster():
@@ -38,22 +40,17 @@ def setup_environment():
     return benchmarks_dir, suite, environment
 
 
-REVISION = "ae1552d"
+REVISION = "98239cfcff30150460b397ce9edf4ae02c0a6251"
 REPO = os.environ["DOWNWARD_REPO"]
 BENCHMARKS_DIR, SUITE, ENVIRONMENT = setup_environment()
 
 # time in seconds
-precomp_times = [900, 600, 1200]
+max_state_caps = [2048, 6000]
 CONFIGS = []
 
-for time in precomp_times:
-    CONFIGS.append(common_setup.IssueConfig(f"daOTF-{time}", ["--search", f"astar(domain_abstraction(max_time={time}))"]))
-    CONFIGS.append(common_setup.IssueConfig(f"cegar-{time}", ["--search", f"astar(cegar(max_time={time}))"]))
-
-print(f"We have {len(CONFIGS)} configurations to run for every task!")
-print(f"We think repo is at: {REPO}")
-print(f"We think benchmarks are at: {BENCHMARKS_DIR}")
-print(f"We have {len(SUITE)} tasks in our suite!")
+for state_cap in max_state_caps:
+    CONFIGS.append(common_setup.IssueConfig(f"daPrecomp-{state_cap}", ["--search", f"astar(domain_abstraction(precalculation=true, max_states={state_cap}))"]))
+    CONFIGS.append(common_setup.IssueConfig(f"daPrecomp-{state_cap}-Uniform", ["--search", f"astar(domain_abstraction(precalculation=true, max_states={state_cap},singlevaluesplit=false,split_selector=min_states_gain, split_method=RandomUniformSplit))"]))
 
 exp = common_setup.IssueExperiment(
     revisions=[REVISION],
@@ -72,7 +69,10 @@ exp.add_step("build", exp.build)
 exp.add_step("start", exp.start_runs)
 exp.add_fetcher(name="fetch")
 
-exp.add_absolute_report_step(attributes=(["#AbstractStates", "#CEGAR Loop Iterations"] + common_setup.IssueExperiment.DEFAULT_TABLE_ATTRIBUTES))
+#exp.add_comparison_table_step(attributes=["coverage"])
+#exp.add_absolute_report_step(attributes=(["Num AbstractStates", "Num CEGAR Loop Iterations", "Precalculation-Time"] + common_setup.IssueExperiment.DEFAULT_TABLE_ATTRIBUTES))
+exp.add_onerev_scatter_plot_step()
+
 exp.add_parse_again_step()
 
 exp.run_steps()
