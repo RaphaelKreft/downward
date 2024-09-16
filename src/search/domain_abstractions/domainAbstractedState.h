@@ -1,0 +1,52 @@
+#ifndef DOMAIN_ABSTRACTIONS_DOMAINABSTRACTEDSTATE_H
+#define DOMAIN_ABSTRACTIONS_DOMAINABSTRACTEDSTATE_H
+
+#include "data_structures.h"
+
+#include <utility>
+#include <vector>
+#include <memory>
+#include <functional>
+
+namespace domain_abstractions {
+
+    class DomainAbstractedState;
+
+    using DomainAbstractedStates = std::vector<std::shared_ptr<DomainAbstractedState>>;
+
+    class DomainAbstractedState {
+        std::vector<int> groupAssignments; // for every var -> In which group inside dom(var) split are u?
+
+        int abstract_state_id;
+        // search-info
+        int incomingOperator_ID{};
+        int g_value{};
+        std::shared_ptr<DomainAbstractedState> parentAbstractState;
+    public:
+        DomainAbstractedState(std::vector<int> groupAssignments, int ID);
+
+        std::vector<int> getGroupsAssignment();
+
+        int get_id() const;
+
+        int get_operator_id() const;
+
+        void set_operator_id(int op_id);
+
+        // searchInfo Part -> These Tasks can also be Nodes
+        int getGValue() const;
+
+        void setGValue(int new_value);
+
+        void setParent(std::shared_ptr<DomainAbstractedState> parent);
+
+        std::shared_ptr<DomainAbstractedState> getParent();
+
+        static std::shared_ptr<Trace> extractSolution(std::shared_ptr<DomainAbstractedState> goal);
+
+        static std::function<bool(std::shared_ptr<DomainAbstractedState>, std::shared_ptr<DomainAbstractedState>)>
+        getComparator();
+    };
+}
+
+#endif
